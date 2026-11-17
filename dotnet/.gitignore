@@ -1,2 +1,39 @@
-bin/
-obj/
+# Visual Studio and IDE state
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build and publish outputs
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+[Bb]in/
+[Oo]bj/
+artifacts/
+publish/
+
+# NuGet packages and generated restore files
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+project.lock.json
+project.fragment.lock.json
+*.nuget.props
+*.nuget.targets
+
+# Test and coverage outputs
+[Tt]est[Rr]esult*/
+coverage*.json
+coverage*.xml
+coverage*.info
+BenchmarkDotNet.Artifacts/
+
+# Generated logs, caches, and signing files
+*.binlog
+*.cache
+*.pfx
+*.pubxml
