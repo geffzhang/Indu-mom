@@ -1,0 +1,7 @@
+{
+  "body": {
+    "detail": "Incorrect username or password"
+  },
+  "content_language": "en",
+  "status": 401
+}
