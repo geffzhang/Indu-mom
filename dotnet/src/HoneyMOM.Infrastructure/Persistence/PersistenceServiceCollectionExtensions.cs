@@ -13,6 +13,7 @@ public static class PersistenceServiceCollectionExtensions
         this IServiceCollection services,
         DatabaseConnectionOptions connectionOptions)
     {
+        EnsureSqliteDirectoryExists(connectionOptions);
         services.AddDbContext<HoneyMomDbContext>(builder =>
         {
             if (connectionOptions.Provider == DatabaseProvider.Sqlite)
@@ -34,6 +35,28 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<DbConnection>(_ => CreateConnection(connectionOptions));
         services.AddScoped<IReadStore, DapperReadStore>();
         return services;
+    }
+
+    private static void EnsureSqliteDirectoryExists(DatabaseConnectionOptions connectionOptions)
+    {
+        if (connectionOptions.Provider != DatabaseProvider.Sqlite)
+        {
+            return;
+        }
+
+        var builder = new SqliteConnectionStringBuilder(connectionOptions.ConnectionString);
+        if (builder.DataSource == ":memory:" ||
+            builder.Mode == SqliteOpenMode.Memory ||
+            string.IsNullOrEmpty(builder.DataSource))
+        {
+            return;
+        }
+
+        var directory = Path.GetDirectoryName(Path.GetFullPath(builder.DataSource));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
     }
 
     private static DbConnection CreateConnection(DatabaseConnectionOptions connectionOptions)

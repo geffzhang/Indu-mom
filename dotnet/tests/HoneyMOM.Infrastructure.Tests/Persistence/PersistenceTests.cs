@@ -3,6 +3,7 @@ using HoneyMOM.Infrastructure.Persistence;
 using HoneyMOM.Infrastructure.Persistence.Entities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Xunit;
 
@@ -21,6 +22,34 @@ public sealed class PersistenceTests
             .Options;
 
         await VerifyRoundTripAsync(connection, options);
+    }
+
+    [Fact]
+    public async Task PersistenceRegistrationCreatesCustomSqliteDatabaseDirectory()
+    {
+        using var temporaryDirectory = new TemporaryDirectory();
+        var dataDirectory = Path.Combine(temporaryDirectory.Path, "data");
+        var databasePath = Path.Combine(temporaryDirectory.Path, "custom", "nested", "mes.db");
+        Directory.CreateDirectory(dataDirectory);
+        var connectionOptions = DatabaseUrlParser.Parse(
+            $"sqlite:///{databasePath.Replace('\\', '/')}",
+            dataDirectory) with
+        {
+            ConnectionString = new SqliteConnectionStringBuilder
+            {
+                DataSource = databasePath,
+                Pooling = false
+            }.ToString()
+        };
+
+        await using var provider = new ServiceCollection()
+            .AddHoneyMomPersistence(connectionOptions)
+            .BuildServiceProvider();
+        await using var scope = provider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HoneyMomDbContext>();
+        await db.Database.EnsureCreatedAsync();
+
+        Assert.True(File.Exists(databasePath));
     }
 
     [PostgreSqlFact]
@@ -124,6 +153,21 @@ public sealed class PersistenceTests
         Assert.NotNull(readRole);
         Assert.Equal("""["user:read","user:write"]""", readRole.Perms);
         Assert.Equal("""{"plant_ids":[1]}""", readRole.Scope);
+    }
+
+    private sealed class TemporaryDirectory : IDisposable
+    {
+        public string Path { get; } = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(),
+            $"honeymom-persistence-test-{Guid.NewGuid():N}");
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Path))
+            {
+                Directory.Delete(Path, recursive: true);
+            }
+        }
     }
 }
 

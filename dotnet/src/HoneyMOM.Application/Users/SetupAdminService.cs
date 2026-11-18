@@ -20,20 +20,25 @@ public sealed class SetupAdminService(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        var normalizedUsername = (username ?? "").Trim();
-        if (normalizedUsername.Length == 0 || normalizedUsername.EnumerateRunes().Count() > 40)
-        {
-            return new AuthenticationOperationResult(null, "请填写账号");
-        }
-
-        if ((password ?? "").EnumerateRunes().Count() < 8)
-        {
-            return new AuthenticationOperationResult(null, "新密码至少 8 位");
-        }
-
         await SetupLock.WaitAsync(cancellationToken);
         try
         {
+            if (!await store.NeedsAdminAsync(cancellationToken))
+            {
+                return new AuthenticationOperationResult(null, "管理员账号已存在");
+            }
+
+            var normalizedUsername = (username ?? "").Trim();
+            if (normalizedUsername.Length == 0 || normalizedUsername.EnumerateRunes().Count() > 40)
+            {
+                return new AuthenticationOperationResult(null, "请填写账号");
+            }
+
+            if ((password ?? "").EnumerateRunes().Count() < 8)
+            {
+                return new AuthenticationOperationResult(null, "新密码至少 8 位");
+            }
+
             var user = await store.CreateAdminAndAuditAsync(
                 normalizedUsername,
                 string.IsNullOrEmpty(name) ? normalizedUsername : name,

@@ -15,10 +15,12 @@ Porting tools and .NET:
 
 - `python -m unittest discover -s tests/porting -v` — 6 passed.
 - `dotnet build dotnet/HoneyMOM.sln -c Release` — 0 warnings, 0 errors.
-- `dotnet test dotnet/HoneyMOM.sln -c Release` — 14 passed, 2 skipped, 16 total.
+- `dotnet test dotnet/HoneyMOM.sln -c Release` — 15 passed, 2 skipped, 17 total.
   All SQLite tests passed; the two PostgreSQL tests were skipped locally because
   `FC_PG` was not configured. The `dotnet-foundation` CI job configures PostgreSQL
   16 and `FC_PG` to run those provider tests.
+- The final review added coverage for custom SQLite database paths outside
+  `MOM_DATA` and for Python-compatible setup error precedence.
 - `python tests/foundation_check.py` — 109/109 passed on SQLite with the CI
   environment (`MOM_DEMO=1`, `MOM_DEMO_LANG=zh`, `E2E_LANG=zh-CN`).
 

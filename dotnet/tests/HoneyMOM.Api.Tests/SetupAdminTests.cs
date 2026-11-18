@@ -101,6 +101,14 @@ public sealed class SetupAdminTests
             new { username = "another-user", password = "password-123" });
         Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
         Assert.Equal("An administrator account already exists", await GetDetailAsync(rejected));
+
+        using var rejectedInvalidRequest = await client.PostAsJsonAsync(
+            "/api/setup/admin",
+            new { username = "", password = "short" });
+        Assert.Equal(HttpStatusCode.BadRequest, rejectedInvalidRequest.StatusCode);
+        Assert.Equal(
+            "An administrator account already exists",
+            await GetDetailAsync(rejectedInvalidRequest));
     }
 
     [Fact]
