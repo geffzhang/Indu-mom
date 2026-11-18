@@ -176,7 +176,10 @@ public sealed class SchemaBaselineTests
 
     private static async Task CreateReferenceDatabaseAsync(string repositoryRoot, string dataDirectory)
     {
-        var reference = Path.GetFullPath(Path.Combine(repositoryRoot, "..", "honeymom-python-reference"));
+        var nestedReference = Path.Combine(repositoryRoot, "honeymom-python-reference");
+        var reference = Directory.Exists(nestedReference)
+            ? nestedReference
+            : Path.GetFullPath(Path.Combine(repositoryRoot, "..", "honeymom-python-reference"));
         var startInfo = new ProcessStartInfo("python")
         {
             WorkingDirectory = repositoryRoot,

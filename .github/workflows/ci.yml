@@ -105,6 +105,51 @@ jobs:
       - name: Built-in ERP on PostgreSQL
         run: python tests/erp_check.py --db pg
 
+  dotnet-foundation:
+    name: .NET port foundation (SQLite and PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      FC_PG: postgresql+psycopg://ci:ci@127.0.0.1:5432/ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Install Python fixture dependencies
+        run: pip install fastapi sqlalchemy
+      - name: Read locked Python reference commit
+        id: reference
+        run: |
+          commit=$(python -c 'import json; print(json.load(open("porting/reference-lock.json"))["commit"])')
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: HoneyMeta/HoneyMOM
+          ref: ${{ steps.reference.outputs.commit }}
+          path: honeymom-python-reference
+      - name: Verify the locked reference checkout
+        run: python tools/porting/reference_lock.py check --repo honeymom-python-reference --dest porting/reference-lock.json
+      - name: Python porting tools
+        run: python -m unittest discover -s tests/porting -v
+      - name: .NET Release build
+        run: dotnet build dotnet/HoneyMOM.sln -c Release
+      - name: .NET Release tests (SQLite and PostgreSQL)
+        run: dotnet test dotnet/HoneyMOM.sln -c Release
+
   replayer-e2e:
     name: End to end (HoneyMOM + replayer)
     runs-on: ubuntu-latest

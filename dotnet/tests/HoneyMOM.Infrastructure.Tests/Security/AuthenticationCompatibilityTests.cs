@@ -79,8 +79,10 @@ public sealed class AuthenticationCompatibilityTests
         DateTimeOffset now,
         string username)
     {
-        var referencePath = Path.GetFullPath(
-            Path.Combine(repositoryRoot, "..", "honeymom-python-reference"));
+        var nestedReferencePath = Path.Combine(repositoryRoot, "honeymom-python-reference");
+        var referencePath = Directory.Exists(nestedReferencePath)
+            ? nestedReferencePath
+            : Path.GetFullPath(Path.Combine(repositoryRoot, "..", "honeymom-python-reference"));
         var startInfo = new ProcessStartInfo("python")
         {
             WorkingDirectory = repositoryRoot,
