@@ -1,11 +1,22 @@
 using HoneyMOM.Infrastructure.Persistence.Entities;
+using HoneyMOM.Application.Metadata;
+using HoneyMOM.Infrastructure.Persistence.Metadata;
 using Microsoft.EntityFrameworkCore;
 
 namespace HoneyMOM.Infrastructure.Persistence;
 
-public sealed class HoneyMomDbContext(DbContextOptions<HoneyMomDbContext> options)
-    : DbContext(options)
+public sealed class HoneyMomDbContext : DbContext
 {
+    private readonly IEntitySchemaCatalog _schemaCatalog;
+
+    public HoneyMomDbContext(
+        DbContextOptions<HoneyMomDbContext> options,
+        IEntitySchemaCatalog? schemaCatalog = null)
+        : base(options)
+    {
+        _schemaCatalog = schemaCatalog ?? SchemaSnapshotCatalog.Default;
+    }
+
     public DbSet<SystemUserRow> SystemUsers => Set<SystemUserRow>();
     public DbSet<SystemRoleRow> SystemRoles => Set<SystemRoleRow>();
     public DbSet<SettingRow> Settings => Set<SettingRow>();
@@ -13,6 +24,8 @@ public sealed class HoneyMomDbContext(DbContextOptions<HoneyMomDbContext> option
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        DynamicEntityModelBuilder.Apply(modelBuilder, _schemaCatalog);
+
         modelBuilder.Entity<SystemUserRow>(entity =>
         {
             entity.ToTable("sys_user");

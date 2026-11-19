@@ -1,5 +1,7 @@
 using System.Data.Common;
 using HoneyMOM.Application.Abstractions;
+using HoneyMOM.Application.Metadata;
+using HoneyMOM.Infrastructure.Persistence.Metadata;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +16,8 @@ public static class PersistenceServiceCollectionExtensions
         DatabaseConnectionOptions connectionOptions)
     {
         EnsureSqliteDirectoryExists(connectionOptions);
+        services.AddSingleton<IEntitySchemaCatalog>(_ => SchemaSnapshotCatalog.Default);
+        services.AddScoped<DynamicEntityStore>();
         services.AddDbContext<HoneyMomDbContext>(builder =>
         {
             if (connectionOptions.Provider == DatabaseProvider.Sqlite)

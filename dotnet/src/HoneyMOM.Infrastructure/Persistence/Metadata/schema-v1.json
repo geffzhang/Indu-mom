@@ -44,7 +44,8 @@
       "label": "工厂",
       "menu": true,
       "module": "主数据",
-      "name": "plant"
+      "name": "plant",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -96,7 +97,8 @@
       "label": "车间",
       "menu": true,
       "module": "主数据",
-      "name": "workshop"
+      "name": "workshop",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -136,7 +138,8 @@
       "label": "产线",
       "menu": true,
       "module": "主数据",
-      "name": "line"
+      "name": "line",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -195,7 +198,8 @@
       "label": "工序",
       "menu": true,
       "module": "主数据",
-      "name": "process"
+      "name": "process",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -251,7 +255,8 @@
       "label": "工位",
       "menu": true,
       "module": "主数据",
-      "name": "workstation"
+      "name": "workstation",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -323,7 +328,8 @@
       "label": "物料",
       "menu": true,
       "module": "主数据",
-      "name": "material"
+      "name": "material",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -369,7 +375,8 @@
       "label": "BOM",
       "menu": true,
       "module": "主数据",
-      "name": "bom"
+      "name": "bom",
+      "order": "product"
     },
     {
       "actions": {},
@@ -428,7 +435,8 @@
       "label": "工艺路线",
       "menu": true,
       "module": "主数据",
-      "name": "route"
+      "name": "route",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -531,7 +539,8 @@
       "label": "工艺步骤",
       "menu": false,
       "module": "主数据",
-      "name": "route_step"
+      "name": "route_step",
+      "order": "seq"
     },
     {
       "actions": {},
@@ -585,7 +594,8 @@
       "label": "班次",
       "menu": true,
       "module": "主数据",
-      "name": "shift"
+      "name": "shift",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -645,7 +655,8 @@
       "label": "人员技能",
       "menu": true,
       "module": "主数据",
-      "name": "skill"
+      "name": "skill",
+      "order": "employee"
     },
     {
       "actions": {},
@@ -690,7 +701,8 @@
       "label": "换型时间",
       "menu": true,
       "module": "主数据",
-      "name": "changeover"
+      "name": "changeover",
+      "order": "station_group"
     },
     {
       "actions": {},
@@ -736,7 +748,8 @@
       "label": "班组",
       "menu": true,
       "module": "主数据",
-      "name": "team"
+      "name": "team",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -789,7 +802,8 @@
       "label": "员工",
       "menu": true,
       "module": "主数据",
-      "name": "employee"
+      "name": "employee",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -847,7 +861,8 @@
       "label": "缺陷代码",
       "menu": true,
       "module": "质量管理",
-      "name": "defect_code"
+      "name": "defect_code",
+      "order": "-id"
     },
     {
       "actions": {
@@ -1005,7 +1020,8 @@
       "label": "生产工单",
       "menu": true,
       "module": "生产管理",
-      "name": "work_order"
+      "name": "work_order",
+      "order": "-id"
     },
     {
       "actions": {
@@ -1125,7 +1141,8 @@
       "label": "工单工序",
       "menu": false,
       "module": "生产管理",
-      "name": "wo_op"
+      "name": "wo_op",
+      "order": "seq"
     },
     {
       "actions": {},
@@ -1253,7 +1270,8 @@
       "label": "报工记录",
       "menu": true,
       "module": "生产管理",
-      "name": "report"
+      "name": "report",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -1332,7 +1350,8 @@
       "label": "领料退料",
       "menu": true,
       "module": "生产管理",
-      "name": "material_issue"
+      "name": "material_issue",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -1396,7 +1415,8 @@
       "label": "物料齐套",
       "menu": true,
       "module": "生产管理",
-      "name": "wo_kitting"
+      "name": "wo_kitting",
+      "order": "work_order"
     },
     {
       "actions": {},
@@ -1460,7 +1480,8 @@
       "label": "上下工记录",
       "menu": true,
       "module": "生产管理",
-      "name": "attendance"
+      "name": "attendance",
+      "order": "-clock_on"
     },
     {
       "actions": {
@@ -1589,7 +1610,8 @@
       "label": "工人日报",
       "menu": true,
       "module": "生产管理",
-      "name": "worker_daily"
+      "name": "worker_daily",
+      "order": "-day"
     },
     {
       "actions": {},
@@ -1729,7 +1751,8 @@
       "label": "在制品/一件一码",
       "menu": true,
       "module": "生产管理",
-      "name": "part"
+      "name": "part",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -1771,7 +1794,8 @@
       "label": "零件事件",
       "menu": false,
       "module": "生产管理",
-      "name": "part_event"
+      "name": "part_event",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -1816,7 +1840,8 @@
       "label": "发运记录",
       "menu": true,
       "module": "仓储物流",
-      "name": "shipment"
+      "name": "shipment",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -1882,7 +1907,8 @@
       "label": "检验模板",
       "menu": true,
       "module": "质量管理",
-      "name": "insp_template"
+      "name": "insp_template",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -2002,7 +2028,8 @@
       "label": "检验项目",
       "menu": false,
       "module": "质量管理",
-      "name": "insp_item"
+      "name": "insp_item",
+      "order": "seq"
     },
     {
       "actions": {},
@@ -2136,7 +2163,8 @@
       "label": "检验记录",
       "menu": true,
       "module": "质量管理",
-      "name": "insp_record"
+      "name": "insp_record",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -2193,7 +2221,8 @@
       "label": "检验值",
       "menu": false,
       "module": "质量管理",
-      "name": "insp_value"
+      "name": "insp_value",
+      "order": "-id"
     },
     {
       "actions": {
@@ -2338,7 +2367,8 @@
       "label": "不合格品",
       "menu": true,
       "module": "质量管理",
-      "name": "ncr"
+      "name": "ncr",
+      "order": "-id"
     },
     {
       "actions": {
@@ -2456,7 +2486,8 @@
       "label": "返修记录",
       "menu": true,
       "module": "质量管理",
-      "name": "rework"
+      "name": "rework",
+      "order": "-id"
     },
     {
       "actions": {
@@ -2581,7 +2612,8 @@
       "label": "首检",
       "menu": true,
       "module": "质量管理",
-      "name": "first_article"
+      "name": "first_article",
+      "order": "-id"
     },
     {
       "actions": {
@@ -2678,7 +2710,8 @@
       "label": "批次冻结",
       "menu": true,
       "module": "质量管理",
-      "name": "lot_hold"
+      "name": "lot_hold",
+      "order": "-id"
     },
     {
       "actions": {
@@ -2813,7 +2846,8 @@
       "label": "8D 报告",
       "menu": true,
       "module": "质量管理",
-      "name": "report_8d"
+      "name": "report_8d",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -3009,7 +3043,8 @@
       "label": "设备台账",
       "menu": true,
       "module": "设备管理",
-      "name": "equipment"
+      "name": "equipment",
+      "order": "-id"
     },
     {
       "actions": {
@@ -3113,7 +3148,8 @@
       "label": "数据源",
       "menu": true,
       "module": "系统",
-      "name": "datasource"
+      "name": "datasource",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -3348,7 +3384,8 @@
       "label": "采集点",
       "menu": true,
       "module": "系统",
-      "name": "tag_point"
+      "name": "tag_point",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -3396,7 +3433,8 @@
       "label": "设备状态记录",
       "menu": false,
       "module": "设备管理",
-      "name": "equip_state"
+      "name": "equip_state",
+      "order": "-id"
     },
     {
       "actions": {
@@ -3459,7 +3497,8 @@
       "label": "报警记录",
       "menu": true,
       "module": "设备管理",
-      "name": "alarm"
+      "name": "alarm",
+      "order": "-id"
     },
     {
       "actions": {
@@ -3544,7 +3583,8 @@
       "label": "点检保养计划",
       "menu": true,
       "module": "设备管理",
-      "name": "maint_plan"
+      "name": "maint_plan",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -3607,7 +3647,8 @@
       "label": "点检保养记录",
       "menu": true,
       "module": "设备管理",
-      "name": "maint_record"
+      "name": "maint_record",
+      "order": "-id"
     },
     {
       "actions": {
@@ -3728,7 +3769,8 @@
       "label": "维修工单",
       "menu": true,
       "module": "设备管理",
-      "name": "repair_order"
+      "name": "repair_order",
+      "order": "-id"
     },
     {
       "actions": {
@@ -3855,7 +3897,8 @@
       "label": "模具/夹具",
       "menu": true,
       "module": "设备管理",
-      "name": "tooling"
+      "name": "tooling",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -3914,7 +3957,8 @@
       "label": "设备停机计划",
       "menu": true,
       "module": "设备管理",
-      "name": "downtime_plan"
+      "name": "downtime_plan",
+      "order": "-start"
     },
     {
       "actions": {},
@@ -3965,7 +4009,8 @@
       "label": "仓库",
       "menu": true,
       "module": "仓储物流",
-      "name": "warehouse"
+      "name": "warehouse",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4006,7 +4051,8 @@
       "label": "库位",
       "menu": false,
       "module": "仓储物流",
-      "name": "location"
+      "name": "location",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4056,7 +4102,8 @@
       "label": "库存",
       "menu": true,
       "module": "仓储物流",
-      "name": "stock"
+      "name": "stock",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4155,7 +4202,8 @@
       "label": "出入库记录",
       "menu": true,
       "module": "仓储物流",
-      "name": "stock_txn"
+      "name": "stock_txn",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4214,7 +4262,8 @@
       "label": "AGV 任务",
       "menu": true,
       "module": "仓储物流",
-      "name": "agv_task"
+      "name": "agv_task",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4250,7 +4299,8 @@
       "label": "小时电耗",
       "menu": false,
       "module": "能源管理",
-      "name": "energy_hour"
+      "name": "energy_hour",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4385,7 +4435,8 @@
       "label": "炉次记录",
       "menu": true,
       "module": "铸造",
-      "name": "heat"
+      "name": "heat",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4432,7 +4483,8 @@
       "label": "球化记录",
       "menu": true,
       "module": "铸造",
-      "name": "treatment_rec"
+      "name": "treatment_rec",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4522,7 +4574,8 @@
       "label": "炉料",
       "menu": true,
       "module": "铸造",
-      "name": "charge_material"
+      "name": "charge_material",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4584,7 +4637,8 @@
       "label": "配料方案",
       "menu": true,
       "module": "铸造",
-      "name": "charge_plan"
+      "name": "charge_plan",
+      "order": "-id"
     },
     {
       "actions": {
@@ -4684,7 +4738,8 @@
       "label": "NC 程序",
       "menu": true,
       "module": "机加",
-      "name": "nc_program"
+      "name": "nc_program",
+      "order": "-id"
     },
     {
       "actions": {
@@ -4773,7 +4828,8 @@
       "label": "刀具台账",
       "menu": true,
       "module": "机加",
-      "name": "tool"
+      "name": "tool",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4827,7 +4883,8 @@
       "label": "换刀记录",
       "menu": true,
       "module": "机加",
-      "name": "tool_change"
+      "name": "tool_change",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4941,7 +4998,8 @@
       "label": "知识库",
       "menu": true,
       "module": "AI 助手",
-      "name": "kb_doc"
+      "name": "kb_doc",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -4986,7 +5044,8 @@
       "label": "日报",
       "menu": false,
       "module": "AI 助手",
-      "name": "daily_report"
+      "name": "daily_report",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -5027,7 +5086,8 @@
       "label": "问答记录",
       "menu": false,
       "module": "AI 助手",
-      "name": "ai_log"
+      "name": "ai_log",
+      "order": "-id"
     },
     {
       "actions": {
@@ -5145,7 +5205,8 @@
       "label": "安灯",
       "menu": true,
       "module": "生产管理",
-      "name": "andon"
+      "name": "andon",
+      "order": "-id"
     },
     {
       "actions": {
@@ -5239,7 +5300,8 @@
       "label": "物料申请",
       "menu": true,
       "module": "生产管理",
-      "name": "material_request"
+      "name": "material_request",
+      "order": "-id"
     },
     {
       "actions": {
@@ -5324,7 +5386,8 @@
       "label": "排程调整建议",
       "menu": true,
       "module": "生产管理",
-      "name": "schedule_proposal"
+      "name": "schedule_proposal",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -5407,7 +5470,8 @@
       "label": "站内通知",
       "menu": false,
       "module": "系统",
-      "name": "notice"
+      "name": "notice",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -5449,7 +5513,8 @@
       "label": "AI 报告",
       "menu": true,
       "module": "AI 助手",
-      "name": "ai_report"
+      "name": "ai_report",
+      "order": "-id"
     },
     {
       "actions": {
@@ -5513,7 +5578,8 @@
       "label": "用户",
       "menu": true,
       "module": "系统",
-      "name": "sys_user"
+      "name": "sys_user",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -5544,7 +5610,8 @@
       "label": "系统参数",
       "menu": false,
       "module": "系统",
-      "name": "setting"
+      "name": "setting",
+      "order": "-id"
     },
     {
       "actions": {
@@ -5652,7 +5719,8 @@
       "label": "标签模板",
       "menu": true,
       "module": "标签打印",
-      "name": "label_template"
+      "name": "label_template",
+      "order": "-id"
     },
     {
       "actions": {
@@ -5767,7 +5835,8 @@
       "label": "标签打印机",
       "menu": true,
       "module": "标签打印",
-      "name": "printer"
+      "name": "printer",
+      "order": "-id"
     },
     {
       "actions": {
@@ -5903,7 +5972,8 @@
       "label": "激光打码机",
       "menu": true,
       "module": "标签打印",
-      "name": "marker"
+      "name": "marker",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -5987,7 +6057,8 @@
       "label": "自动打印规则",
       "menu": true,
       "module": "标签打印",
-      "name": "label_rule"
+      "name": "label_rule",
+      "order": "event"
     },
     {
       "actions": {
@@ -6144,7 +6215,8 @@
       "label": "打印任务",
       "menu": true,
       "module": "标签打印",
-      "name": "print_job"
+      "name": "print_job",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -6224,7 +6296,8 @@
       "label": "包装规则",
       "menu": true,
       "module": "包装发运",
-      "name": "pack_rule"
+      "name": "pack_rule",
+      "order": "customer"
     },
     {
       "actions": {},
@@ -6350,7 +6423,8 @@
       "label": "包装（箱/托）",
       "menu": true,
       "module": "包装发运",
-      "name": "package"
+      "name": "package",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -6408,7 +6482,8 @@
       "label": "箱内明细",
       "menu": false,
       "module": "包装发运",
-      "name": "package_item"
+      "name": "package_item",
+      "order": "-id"
     },
     {
       "actions": {
@@ -6560,7 +6635,8 @@
       "label": "装车发运",
       "menu": true,
       "module": "包装发运",
-      "name": "ship_load"
+      "name": "ship_load",
+      "order": "-id"
     },
     {
       "actions": {
@@ -6767,7 +6843,8 @@
       "label": "委外单",
       "menu": true,
       "module": "委外加工",
-      "name": "outsource_order"
+      "name": "outsource_order",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -6869,7 +6946,8 @@
       "label": "委外明细",
       "menu": false,
       "module": "委外加工",
-      "name": "outsource_line"
+      "name": "outsource_line",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -6973,7 +7051,8 @@
       "label": "备件",
       "menu": true,
       "module": "备件管理",
-      "name": "spare_part"
+      "name": "spare_part",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -7073,7 +7152,8 @@
       "label": "备件出入库",
       "menu": true,
       "module": "备件管理",
-      "name": "spare_txn"
+      "name": "spare_txn",
+      "order": "-id"
     },
     {
       "actions": {
@@ -7170,7 +7250,8 @@
       "label": "受控文件",
       "menu": true,
       "module": "文件受控",
-      "name": "ctrl_doc"
+      "name": "ctrl_doc",
+      "order": "-id"
     },
     {
       "actions": {
@@ -7292,7 +7373,8 @@
       "label": "文件版本",
       "menu": false,
       "module": "文件受控",
-      "name": "ctrl_doc_rev"
+      "name": "ctrl_doc_rev",
+      "order": "-id"
     },
     {
       "actions": {
@@ -7458,7 +7540,8 @@
       "label": "工艺变更 ECN",
       "menu": true,
       "module": "工艺变更",
-      "name": "ecn"
+      "name": "ecn",
+      "order": "-id"
     },
     {
       "actions": {
@@ -7536,7 +7619,8 @@
       "label": "ECN 实施任务",
       "menu": false,
       "module": "工艺变更",
-      "name": "ecn_task"
+      "name": "ecn_task",
+      "order": "seq"
     },
     {
       "actions": {
@@ -7602,7 +7686,8 @@
       "label": "ECN 在制工单",
       "menu": false,
       "module": "工艺变更",
-      "name": "ecn_wo"
+      "name": "ecn_wo",
+      "order": "-id"
     },
     {
       "actions": {
@@ -7788,7 +7873,8 @@
       "label": "量检具",
       "menu": true,
       "module": "量检具",
-      "name": "gauge"
+      "name": "gauge",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -7895,7 +7981,8 @@
       "label": "校准记录",
       "menu": true,
       "module": "量检具",
-      "name": "gauge_cal"
+      "name": "gauge_cal",
+      "order": "-id"
     },
     {
       "actions": {
@@ -7986,7 +8073,8 @@
       "label": "PFMEA",
       "menu": true,
       "module": "IATF 质量",
-      "name": "pfmea"
+      "name": "pfmea",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -8205,7 +8293,8 @@
       "label": "PFMEA 条目",
       "menu": false,
       "module": "IATF 质量",
-      "name": "pfmea_row"
+      "name": "pfmea_row",
+      "order": "seq"
     },
     {
       "actions": {
@@ -8303,7 +8392,8 @@
       "label": "控制计划",
       "menu": true,
       "module": "IATF 质量",
-      "name": "control_plan"
+      "name": "control_plan",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -8476,7 +8566,8 @@
       "label": "控制计划项",
       "menu": false,
       "module": "IATF 质量",
-      "name": "cp_item"
+      "name": "cp_item",
+      "order": "seq"
     },
     {
       "actions": {
@@ -8622,7 +8713,8 @@
       "label": "MSA 研究",
       "menu": true,
       "module": "IATF 质量",
-      "name": "msa_study"
+      "name": "msa_study",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -8695,7 +8787,8 @@
       "label": "电子签名",
       "menu": true,
       "module": "IATF 质量",
-      "name": "esign"
+      "name": "esign",
+      "order": "-id"
     },
     {
       "actions": {
@@ -8881,7 +8974,8 @@
       "label": "客户投诉",
       "menu": true,
       "module": "客诉召回",
-      "name": "complaint"
+      "name": "complaint",
+      "order": "-id"
     },
     {
       "actions": {
@@ -9002,7 +9096,8 @@
       "label": "设备类型模板",
       "menu": false,
       "module": "工厂模型",
-      "name": "device_template"
+      "name": "device_template",
+      "order": "code"
     },
     {
       "actions": {},
@@ -9068,7 +9163,8 @@
       "label": "计量单位",
       "menu": true,
       "module": "主数据",
-      "name": "uom"
+      "name": "uom",
+      "order": "code"
     },
     {
       "actions": {},
@@ -9117,7 +9213,8 @@
       "label": "单位换算",
       "menu": true,
       "module": "主数据",
-      "name": "uom_conv"
+      "name": "uom_conv",
+      "order": "material"
     },
     {
       "actions": {},
@@ -9272,7 +9369,8 @@
       "label": "客户",
       "menu": true,
       "module": "主数据",
-      "name": "customer"
+      "name": "customer",
+      "order": "code"
     },
     {
       "actions": {},
@@ -9432,7 +9530,8 @@
       "label": "供应商",
       "menu": true,
       "module": "主数据",
-      "name": "supplier"
+      "name": "supplier",
+      "order": "code"
     },
     {
       "actions": {},
@@ -9535,7 +9634,8 @@
       "label": "实施任务",
       "menu": false,
       "module": "实施",
-      "name": "impl_task"
+      "name": "impl_task",
+      "order": "seq"
     },
     {
       "actions": {},
@@ -9586,7 +9686,8 @@
       "label": "客户联系人",
       "menu": false,
       "module": "销售管理",
-      "name": "customer_contact"
+      "name": "customer_contact",
+      "order": "customer"
     },
     {
       "actions": {},
@@ -9639,7 +9740,8 @@
       "label": "客户零件号",
       "menu": true,
       "module": "销售管理",
-      "name": "customer_part"
+      "name": "customer_part",
+      "order": "customer"
     },
     {
       "actions": {},
@@ -9710,7 +9812,8 @@
       "label": "价格表",
       "menu": true,
       "module": "销售管理",
-      "name": "price_list"
+      "name": "price_list",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -9762,7 +9865,8 @@
       "label": "价格明细",
       "menu": false,
       "module": "销售管理",
-      "name": "price_item"
+      "name": "price_item",
+      "order": "material"
     },
     {
       "actions": {
@@ -9867,7 +9971,8 @@
       "label": "报价单",
       "menu": true,
       "module": "销售管理",
-      "name": "quotation"
+      "name": "quotation",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -9944,7 +10049,8 @@
       "label": "报价明细",
       "menu": false,
       "module": "销售管理",
-      "name": "quotation_line"
+      "name": "quotation_line",
+      "order": "seq"
     },
     {
       "actions": {
@@ -10136,7 +10242,8 @@
       "label": "销售订单",
       "menu": true,
       "module": "销售管理",
-      "name": "sales_order"
+      "name": "sales_order",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -10252,7 +10359,8 @@
       "label": "订单明细",
       "menu": false,
       "module": "销售管理",
-      "name": "so_line"
+      "name": "so_line",
+      "order": "seq"
     },
     {
       "actions": {},
@@ -10299,7 +10407,8 @@
       "label": "交货计划",
       "menu": false,
       "module": "销售管理",
-      "name": "so_schedule"
+      "name": "so_schedule",
+      "order": "due"
     },
     {
       "actions": {},
@@ -10361,7 +10470,8 @@
       "label": "订单变更记录",
       "menu": false,
       "module": "销售管理",
-      "name": "so_change"
+      "name": "so_change",
+      "order": "-id"
     },
     {
       "actions": {
@@ -10510,7 +10620,8 @@
       "label": "发货单",
       "menu": true,
       "module": "销售管理",
-      "name": "delivery_order"
+      "name": "delivery_order",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -10597,7 +10708,8 @@
       "label": "发货明细",
       "menu": false,
       "module": "销售管理",
-      "name": "delivery_line"
+      "name": "delivery_line",
+      "order": "-id"
     },
     {
       "actions": {
@@ -10732,7 +10844,8 @@
       "label": "销售退货",
       "menu": true,
       "module": "销售管理",
-      "name": "sales_return"
+      "name": "sales_return",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -10805,7 +10918,8 @@
       "label": "退货明细",
       "menu": false,
       "module": "销售管理",
-      "name": "return_line"
+      "name": "return_line",
+      "order": "-id"
     },
     {
       "actions": {
@@ -10932,7 +11046,8 @@
       "label": "客户对账单",
       "menu": true,
       "module": "销售管理",
-      "name": "customer_statement"
+      "name": "customer_statement",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -11023,7 +11138,8 @@
       "label": "供货清单",
       "menu": true,
       "module": "采购管理",
-      "name": "supplier_material"
+      "name": "supplier_material",
+      "order": "material"
     },
     {
       "actions": {
@@ -11139,7 +11255,8 @@
       "label": "请购单",
       "menu": true,
       "module": "采购管理",
-      "name": "purchase_req"
+      "name": "purchase_req",
+      "order": "-id"
     },
     {
       "actions": {
@@ -11279,7 +11396,8 @@
       "label": "采购订单",
       "menu": true,
       "module": "采购管理",
-      "name": "purchase_order"
+      "name": "purchase_order",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -11392,7 +11510,8 @@
       "label": "采购明细",
       "menu": false,
       "module": "采购管理",
-      "name": "po_line"
+      "name": "po_line",
+      "order": "seq"
     },
     {
       "actions": {
@@ -11517,7 +11636,8 @@
       "label": "采购收货",
       "menu": true,
       "module": "采购管理",
-      "name": "purchase_receipt"
+      "name": "purchase_receipt",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -11627,7 +11747,8 @@
       "label": "收货明细",
       "menu": false,
       "module": "采购管理",
-      "name": "receipt_line"
+      "name": "receipt_line",
+      "order": "-id"
     },
     {
       "actions": {
@@ -11748,7 +11869,8 @@
       "label": "退供应商",
       "menu": true,
       "module": "采购管理",
-      "name": "supplier_return"
+      "name": "supplier_return",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -11814,7 +11936,8 @@
       "label": "退供明细",
       "menu": false,
       "module": "采购管理",
-      "name": "supplier_return_line"
+      "name": "supplier_return_line",
+      "order": "-id"
     },
     {
       "actions": {
@@ -11941,7 +12064,8 @@
       "label": "供应商对账单",
       "menu": true,
       "module": "采购管理",
-      "name": "supplier_statement"
+      "name": "supplier_statement",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -11987,7 +12111,8 @@
       "label": "需求预测",
       "menu": true,
       "module": "计划 MRP",
-      "name": "forecast"
+      "name": "forecast",
+      "order": "due"
     },
     {
       "actions": {},
@@ -12069,7 +12194,8 @@
       "label": "物料计划参数",
       "menu": true,
       "module": "计划 MRP",
-      "name": "mat_plan"
+      "name": "mat_plan",
+      "order": "material"
     },
     {
       "actions": {},
@@ -12135,7 +12261,8 @@
       "label": "MRP 运算",
       "menu": true,
       "module": "计划 MRP",
-      "name": "mrp_run"
+      "name": "mrp_run",
+      "order": "-id"
     },
     {
       "actions": {
@@ -12288,7 +12415,8 @@
       "label": "MRP 建议",
       "menu": true,
       "module": "计划 MRP",
-      "name": "mrp_suggestion"
+      "name": "mrp_suggestion",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -12384,7 +12512,8 @@
       "label": "费率",
       "menu": true,
       "module": "成本核算",
-      "name": "cost_rate"
+      "name": "cost_rate",
+      "order": "kind"
     },
     {
       "actions": {},
@@ -12470,7 +12599,8 @@
       "label": "标准成本",
       "menu": true,
       "module": "成本核算",
-      "name": "std_cost"
+      "name": "std_cost",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -12598,7 +12728,8 @@
       "label": "工单成本",
       "menu": true,
       "module": "成本核算",
-      "name": "wo_cost"
+      "name": "wo_cost",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -12648,7 +12779,8 @@
       "label": "存货成本",
       "menu": true,
       "module": "成本核算",
-      "name": "inv_cost"
+      "name": "inv_cost",
+      "order": "material"
     },
     {
       "actions": {},
@@ -12733,7 +12865,8 @@
       "label": "存货计价流水",
       "menu": false,
       "module": "成本核算",
-      "name": "cost_ledger"
+      "name": "cost_ledger",
+      "order": "-id"
     },
     {
       "actions": {
@@ -12802,7 +12935,8 @@
       "label": "会计期间",
       "menu": true,
       "module": "成本核算",
-      "name": "fin_period"
+      "name": "fin_period",
+      "order": "-code"
     },
     {
       "actions": {
@@ -12922,7 +13056,8 @@
       "label": "销售发票",
       "menu": true,
       "module": "财务",
-      "name": "ar_invoice"
+      "name": "ar_invoice",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -12973,7 +13108,8 @@
       "label": "销售发票明细",
       "menu": false,
       "module": "财务",
-      "name": "ar_invoice_line"
+      "name": "ar_invoice_line",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -13063,7 +13199,8 @@
       "label": "收款单",
       "menu": true,
       "module": "财务",
-      "name": "ar_receipt"
+      "name": "ar_receipt",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -13102,7 +13239,8 @@
       "label": "收款核销",
       "menu": false,
       "module": "财务",
-      "name": "ar_apply"
+      "name": "ar_apply",
+      "order": "-id"
     },
     {
       "actions": {
@@ -13222,7 +13360,8 @@
       "label": "采购发票",
       "menu": true,
       "module": "财务",
-      "name": "ap_invoice"
+      "name": "ap_invoice",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -13273,7 +13412,8 @@
       "label": "采购发票明细",
       "menu": false,
       "module": "财务",
-      "name": "ap_invoice_line"
+      "name": "ap_invoice_line",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -13363,7 +13503,8 @@
       "label": "付款单",
       "menu": true,
       "module": "财务",
-      "name": "ap_payment"
+      "name": "ap_payment",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -13402,7 +13543,8 @@
       "label": "付款核销",
       "menu": false,
       "module": "财务",
-      "name": "ap_apply"
+      "name": "ap_apply",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -13485,7 +13627,8 @@
       "label": "科目映射",
       "menu": true,
       "module": "财务",
-      "name": "acct_map"
+      "name": "acct_map",
+      "order": "event"
     },
     {
       "actions": {
@@ -13606,7 +13749,8 @@
       "label": "凭证",
       "menu": true,
       "module": "财务",
-      "name": "voucher"
+      "name": "voucher",
+      "order": "-id"
     },
     {
       "actions": {},
@@ -13691,7 +13835,8 @@
       "label": "凭证分录",
       "menu": false,
       "module": "财务",
-      "name": "voucher_line"
+      "name": "voucher_line",
+      "order": "seq"
     },
     {
       "actions": {},
@@ -13747,7 +13892,8 @@
       "label": "凭证导出",
       "menu": false,
       "module": "财务",
-      "name": "voucher_export"
+      "name": "voucher_export",
+      "order": "-id"
     }
   ],
   "reference_commit": "cf7abbbe215677022d22d3edef3554a86d18a924",

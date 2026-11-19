@@ -81,10 +81,15 @@ def build_snapshot(reference):
     sys.path.insert(0, str(reference))
     from honeymom import schema
 
+    entity_specs = schema.spec_json()
+    entity_definitions = {entity.name: entity for entity in schema.ENTITIES}
+    for spec in entity_specs:
+        spec["order"] = entity_definitions[spec["name"]].order
+
     return {
         "version": 1,
         "reference_commit": actual_commit,
-        "entities": schema.spec_json(),
+        "entities": entity_specs,
         "tables": {
             name: table_snapshot(table)
             for name, table in sorted(schema.metadata.tables.items())

@@ -51,6 +51,10 @@ class SchemaSnapshotTests(unittest.TestCase):
             entity_names = {entity["name"] for entity in snapshot["entities"]}
             self.assertTrue({"plant", "work_order", "ncr"}.issubset(entity_names))
             self.assertEqual(snapshot["version"], 1)
+            self.assertEqual(
+                next(entity for entity in snapshot["entities"] if entity["name"] == "bom")["order"],
+                "product",
+            )
 
             plant = snapshot["tables"]["plant"]
             columns = {column["name"] for column in plant["columns"]}
