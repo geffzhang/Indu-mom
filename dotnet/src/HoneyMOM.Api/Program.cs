@@ -7,6 +7,7 @@ using HoneyMOM.Infrastructure.Persistence;
 using HoneyMOM.Infrastructure.Security;
 using HoneyMOM.Api.Commands;
 using HoneyMOM.Infrastructure.Configuration;
+using HoneyMOM.Application.Security;
 using Microsoft.Extensions.DependencyInjection;
 
 if (args.Length > 0 && args[0] == "db")
@@ -46,6 +47,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHoneyMomPersistence(runtimeDatabaseOptions);
 builder.Services.AddSingleton(runtimeOptions);
 builder.Services.AddScoped<IUserAuthenticationStore, EfUserAuthenticationStore>();
+builder.Services.AddScoped<ICallerResolver, EfCallerResolver>();
 builder.Services.AddSingleton<IPasswordHasher, PythonCompatiblePasswordHasher>();
 builder.Services.AddSingleton<ITokenService, PythonCompatibleTokenService>();
 builder.Services.AddScoped<SetupAdminService>();
