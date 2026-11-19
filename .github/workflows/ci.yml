@@ -143,6 +143,12 @@ jobs:
           path: honeymom-python-reference
       - name: Verify the locked reference checkout
         run: python tools/porting/reference_lock.py check --repo honeymom-python-reference --dest porting/reference-lock.json
+      - name: Verify .NET schema snapshot
+        run: >-
+          python tools/porting/export_schema_snapshot.py
+          --reference honeymom-python-reference
+          --output dotnet/src/HoneyMOM.Infrastructure/Persistence/Metadata/schema-v1.json
+          --check
       - name: Python porting tools
         run: python -m unittest discover -s tests/porting -v
       - name: .NET Release build
