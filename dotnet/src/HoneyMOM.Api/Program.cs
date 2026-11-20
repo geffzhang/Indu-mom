@@ -71,6 +71,7 @@ app.MapEntityEndpoints();
 app.MapPlatformEndpoints();
 app.MapAdminIdentityEndpoints();
 app.MapAdminApiKeyEndpoints();
+app.MapAdminAuditEndpoints();
 
 await app.RunAsync();
 return 0;

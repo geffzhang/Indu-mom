@@ -54,6 +54,17 @@ public sealed class RequestLanguageMiddleware(RequestDelegate next, IConfigurati
             "API 密钥已过期" => "API key has expired",
             "日期时间格式不对" => "Invalid date and time format",
             "密钥只显示这一次，请立即复制保存" => "The key is shown only once. Copy and save it now",
+            "序号" => "Sequence",
+            "时间" => "Time",
+            "用户" => "User",
+            "动作" => "Action",
+            "对象" => "Entity",
+            "对象ID" => "Entity ID",
+            "目标" => "Target",
+            "来源" => "Source",
+            "改动" => "Changes",
+            "详情" => "Details",
+            "哈希" => "Hash",
             _ when message.StartsWith("API 密钥不允许从 ", StringComparison.Ordinal) &&
                 message.EndsWith(" 调用（IP 白名单）", StringComparison.Ordinal) =>
                 $"API key is not allowed to make calls from {message["API 密钥不允许从 ".Length..^" 调用（IP 白名单）".Length]} (IP allowlist)",
