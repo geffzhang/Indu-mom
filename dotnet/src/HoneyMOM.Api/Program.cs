@@ -8,6 +8,7 @@ using HoneyMOM.Infrastructure.Security;
 using HoneyMOM.Api.Commands;
 using HoneyMOM.Infrastructure.Configuration;
 using HoneyMOM.Application.Security;
+using HoneyMOM.Application.Entities;
 using Microsoft.Extensions.DependencyInjection;
 
 if (args.Length > 0 && args[0] == "db")
@@ -52,6 +53,11 @@ builder.Services.AddSingleton<IPasswordHasher, PythonCompatiblePasswordHasher>()
 builder.Services.AddSingleton<ITokenService, PythonCompatibleTokenService>();
 builder.Services.AddScoped<SetupAdminService>();
 builder.Services.AddScoped<LoginService>();
+builder.Services.AddScoped<AuditService>();
+builder.Services.AddScoped<EntityQueryService>();
+builder.Services.AddScoped<EntityCommandService>();
+builder.Services.AddScoped<EntityActionDispatcher>();
+builder.Services.AddScoped<IEntityActionHandler, SystemUserResetPasswordHandler>();
 var app = builder.Build();
 
 app.UseMiddleware<RequestLanguageMiddleware>();
@@ -60,6 +66,7 @@ app.UseMiddleware<ApiErrorMiddleware>();
 app.MapGet("/health", () => Results.Json(new { status = "ok" }));
 app.MapSetupEndpoints();
 app.MapAuthenticationEndpoints();
+app.MapEntityEndpoints();
 
 await app.RunAsync();
 return 0;
