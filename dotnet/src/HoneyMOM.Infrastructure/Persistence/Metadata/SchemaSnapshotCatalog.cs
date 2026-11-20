@@ -37,12 +37,18 @@ public sealed class SchemaSnapshotCatalog : IEntitySchemaCatalog
         }
 
         Entities = Array.AsReadOnly(entities);
+        RawEntities = Array.AsReadOnly(root.GetProperty("entities")
+            .EnumerateArray()
+            .Select(entity => entity.Clone())
+            .ToArray());
         _byName = entities.ToDictionary(entity => entity.Name, StringComparer.Ordinal);
     }
 
     public static SchemaSnapshotCatalog Default => DefaultCatalog.Value;
 
     public IReadOnlyList<EntitySchema> Entities { get; }
+
+    public IReadOnlyList<JsonElement> RawEntities { get; }
 
     public EntitySchema? Get(string entityName) =>
         _byName.TryGetValue(entityName, out var entity) ? entity : null;

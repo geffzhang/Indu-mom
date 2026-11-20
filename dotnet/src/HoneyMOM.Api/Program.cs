@@ -67,6 +67,8 @@ app.MapGet("/health", () => Results.Json(new { status = "ok" }));
 app.MapSetupEndpoints();
 app.MapAuthenticationEndpoints();
 app.MapEntityEndpoints();
+app.MapPlatformEndpoints();
+app.MapAdminIdentityEndpoints();
 
 await app.RunAsync();
 return 0;

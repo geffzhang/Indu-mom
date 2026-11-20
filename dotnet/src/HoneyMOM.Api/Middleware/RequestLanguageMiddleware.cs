@@ -37,6 +37,22 @@ public sealed class RequestLanguageMiddleware(RequestDelegate next, IConfigurati
             "管理员账号已存在" => "An administrator account already exists",
             "请填写账号" => "Please enter a username",
             "新密码至少 8 位" => "New password must be at least 8 characters",
+            "原密码不对" => "Incorrect current password",
+            "新密码至少 6 位" => "New password must be at least 6 characters",
+            "请填写角色名称" => "Enter a role name",
+            "角色编码只能用小写字母、数字和下划线" => "Role code can contain only lowercase letters, numbers, and underscores",
+            "没有这个角色" => "Role not found",
+            "只有内置角色能恢复默认" => "Only built-in roles can be restored to defaults",
+            "内置角色不能删除（可以改权限）" => "Built-in roles cannot be deleted (you can change their permissions)",
+            "不能去掉自己的管理员角色" => "You cannot remove your own administrator role",
+            "系统管理员角色必须保留全部权限（*），否则可能没人能再管理权限" =>
+                "The system administrator role must retain all permissions (*), or no one may be able to manage permissions",
+            _ when message.StartsWith("角色 ", StringComparison.Ordinal) && message.EndsWith(" 已存在", StringComparison.Ordinal) =>
+                $"Role {message["角色 ".Length..^" 已存在".Length]} already exists",
+            _ when message.StartsWith("还有 ", StringComparison.Ordinal) && message.EndsWith(" 个用户用这个角色，先把他们换成别的角色", StringComparison.Ordinal) =>
+                $"{message["还有 ".Length..message.IndexOf(" 个用户", StringComparison.Ordinal)]} users still have this role. Assign them a different role first",
+            _ when message.StartsWith("没有这些角色：", StringComparison.Ordinal) =>
+                $"Roles not found: {message["没有这些角色：".Length..]}",
             _ => message
         };
     }

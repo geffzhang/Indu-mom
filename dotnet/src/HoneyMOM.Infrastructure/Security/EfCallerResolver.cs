@@ -12,18 +12,60 @@ public sealed class EfCallerResolver(
     HoneyMomDbContext dbContext,
     ITokenService tokenService) : ICallerResolver
 {
-    private static readonly IReadOnlyDictionary<string, (string Name, string[] Permissions)> DefaultRoles =
+    public static readonly IReadOnlyDictionary<string, (string Name, string[] Permissions)> DefaultRoles =
         new Dictionary<string, (string, string[])>(StringComparer.Ordinal)
         {
             ["admin"] = ("系统管理员", ["*"]),
             ["manager"] = ("厂长/经理", ["*", "!system.role.manage", "!system.apikey.manage", "!system.backup.manage", "!system.ai.manage"]),
-            ["planner"] = ("计划员", ["page.*", "*.read", "production.*", "master.*"]),
-            ["leader"] = ("班组长", ["page.*", "*.read", "production.*", "equipment.*"]),
-            ["operator"] = ("操作工", ["page.*", "*.read", "production.*", "equipment.*"]),
-            ["qc"] = ("质检员", ["page.*", "*.read", "quality.*"]),
-            ["maint"] = ("设备员", ["page.*", "*.read", "equipment.*"]),
-            ["warehouse"] = ("仓管员", ["page.*", "*.read", "warehouse.*"]),
-            ["engineer"] = ("工艺工程师", ["page.*", "*.read", "master.*", "machining.*", "foundry.*", "quality.*", "ai.*"])
+            ["planner"] = ("计划员", [
+                "page.*", "*.read", "production.*", "master.*", "outsource.*", "pack.ship_load.*",
+                "label.print", "mrp.*", "sales.sales_order.make_wo", "purchase.purchase_req.*",
+                "!finance.*", "!cost.*", "!page.finance.*"
+            ]),
+            ["leader"] = ("班组长", [
+                "page.*", "*.read", "production.*", "equipment.*", "pack.*", "label.print",
+                "label.reprint", "label.print_job.*", "spare.spare_txn.*",
+                "!finance.*", "!cost.*", "!page.finance.*"
+            ]),
+            ["operator"] = ("操作工", [
+                "page.*", "*.read", "production.*", "equipment.*", "pack.package.*",
+                "pack.package_item.*", "pack.station", "label.print",
+                "!finance.*", "!cost.*", "!page.finance.*"
+            ]),
+            ["qc"] = ("质检员", [
+                "page.*", "*.read", "quality.*", "gauge.*", "iatf.*", "complaint.*",
+                "label.print", "label.reprint", "label.print_job.*", "doc.ctrl_doc_rev.review",
+                "!finance.*", "!cost.*", "!page.finance.*"
+            ]),
+            ["maint"] = ("设备员", [
+                "page.*", "*.read", "equipment.*", "spare.*", "gauge.gauge_cal.*",
+                "factory.*", "onboard.*", "system.datasource.*", "system.tag_point.*",
+                "!finance.*", "!cost.*", "!page.finance.*"
+            ]),
+            ["warehouse"] = ("仓管员", [
+                "page.*", "*.read", "warehouse.*", "pack.*", "label.*", "outsource.*", "spare.*",
+                "sales.delivery_order.*", "sales.sales_return.receive", "purchase.purchase_receipt.*",
+                "purchase.receipt_line.*", "purchase.supplier_return.*",
+                "!finance.*", "!cost.*", "!page.finance.*"
+            ]),
+            ["engineer"] = ("工艺工程师", [
+                "page.*", "*.read", "master.*", "machining.*", "foundry.*", "quality.*", "ai.*",
+                "ecn.*", "doc.*", "iatf.*", "gauge.*", "label.*", "complaint.*",
+                "factory.*", "onboard.*", "system.datasource.*", "system.tag_point.*",
+                "!finance.*", "!cost.*", "!page.finance.*"
+            ]),
+            ["sales"] = ("销售员", [
+                "page.*", "*.read", "sales.*", "master.customer.*", "master.customer_part.*",
+                "!cost.*", "!page.finance.cost", "!page.finance.vouchers"
+            ]),
+            ["buyer"] = ("采购员", [
+                "page.*", "*.read", "purchase.*", "master.supplier.*", "mrp.mrp_suggestion.*",
+                "!cost.*", "!page.finance.cost", "!page.finance.vouchers"
+            ]),
+            ["finance"] = ("财务", [
+                "page.*", "*.read", "finance.*", "cost.*", "sales.customer_statement.*",
+                "purchase.supplier_statement.*", "master.customer.update", "master.supplier.update"
+            ])
         };
 
     public async Task<CallerResolutionResult> ResolveAsync(

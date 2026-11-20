@@ -372,7 +372,7 @@ public static class EntityEndpoints
         return endpoints;
     }
 
-    private static async Task<(CallerPrincipal? Caller, IResult? Error)> ResolveCallerAsync(
+    internal static async Task<(CallerPrincipal? Caller, IResult? Error)> ResolveCallerAsync(
         HttpContext context,
         ICallerResolver resolver,
         CancellationToken cancellationToken)
@@ -523,7 +523,7 @@ public static class EntityEndpoints
         output.Append("\r\n");
     }
 
-    private static IResult Error(HttpContext context, int statusCode, string message) =>
+    internal static IResult Error(HttpContext context, int statusCode, string message) =>
         Results.Json(
             new { detail = RequestLanguageMiddleware.Translate(message, RequestLanguageMiddleware.GetLanguage(context)) },
             statusCode: statusCode);
