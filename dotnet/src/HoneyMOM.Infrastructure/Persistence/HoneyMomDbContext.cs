@@ -22,6 +22,32 @@ public sealed class HoneyMomDbContext : DbContext
     public DbSet<SettingRow> Settings => Set<SettingRow>();
     public DbSet<AuditLogRow> AuditLogs => Set<AuditLogRow>();
 
+    public override int SaveChanges()
+    {
+        EnsureAuditAppendOnly();
+        return base.SaveChanges();
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        EnsureAuditAppendOnly();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        EnsureAuditAppendOnly();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureAuditAppendOnly();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         DynamicEntityModelBuilder.Apply(modelBuilder, _schemaCatalog);
@@ -93,5 +119,17 @@ public sealed class HoneyMomDbContext : DbContext
             entity.Property(row => row.Hash).HasColumnName("hash");
             entity.HasIndex(row => row.Seq).IsUnique();
         });
+    }
+
+    private void EnsureAuditAppendOnly()
+    {
+        foreach (var entry in ChangeTracker.Entries<AuditLogRow>())
+        {
+            if (entry.State == EntityState.Deleted ||
+                entry.State == EntityState.Modified && entry.OriginalValues.GetValue<int?>(nameof(AuditLogRow.Seq)) is not null)
+            {
+                throw new InvalidOperationException("Audit log rows are append-only after sealing and cannot be deleted.");
+            }
+        }
     }
 }
