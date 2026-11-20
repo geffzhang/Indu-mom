@@ -6,7 +6,11 @@ public enum CallerResolutionFailure
     Unauthenticated,
     InactiveUser,
     InvalidApiKey,
-    ApiKeyNotAllowed
+    MalformedApiKey,
+    ExpiredApiKey,
+    RevokedApiKey,
+    ApiKeyNotAllowed,
+    ApiKeyIpNotAllowed
 }
 
 public sealed record CallerResolutionResult(

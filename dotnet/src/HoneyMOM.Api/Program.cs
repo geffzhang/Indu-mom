@@ -54,6 +54,7 @@ builder.Services.AddSingleton<ITokenService, PythonCompatibleTokenService>();
 builder.Services.AddScoped<SetupAdminService>();
 builder.Services.AddScoped<LoginService>();
 builder.Services.AddScoped<AuditService>();
+builder.Services.AddScoped<ApiKeyService>();
 builder.Services.AddScoped<EntityQueryService>();
 builder.Services.AddScoped<EntityCommandService>();
 builder.Services.AddScoped<EntityActionDispatcher>();
@@ -69,6 +70,7 @@ app.MapAuthenticationEndpoints();
 app.MapEntityEndpoints();
 app.MapPlatformEndpoints();
 app.MapAdminIdentityEndpoints();
+app.MapAdminApiKeyEndpoints();
 
 await app.RunAsync();
 return 0;

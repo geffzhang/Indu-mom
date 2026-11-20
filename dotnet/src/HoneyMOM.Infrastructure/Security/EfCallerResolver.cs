@@ -8,10 +8,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HoneyMOM.Infrastructure.Security;
 
-public sealed class EfCallerResolver(
-    HoneyMomDbContext dbContext,
-    ITokenService tokenService) : ICallerResolver
+public sealed class EfCallerResolver : ICallerResolver
 {
+    private readonly HoneyMomDbContext _dbContext;
+    private readonly ITokenService _tokenService;
+    private readonly ApiKeyService _apiKeyService;
+
+    public EfCallerResolver(
+        HoneyMomDbContext dbContext,
+        ITokenService tokenService,
+        ApiKeyService? apiKeyService = null)
+    {
+        _dbContext = dbContext;
+        _tokenService = tokenService;
+        _apiKeyService = apiKeyService ?? new ApiKeyService(dbContext);
+    }
+
     public static readonly IReadOnlyDictionary<string, (string Name, string[] Permissions)> DefaultRoles =
         new Dictionary<string, (string, string[])>(StringComparer.Ordinal)
         {
@@ -75,7 +87,23 @@ public sealed class EfCallerResolver(
         var (token, apiKey) = ExtractCredentials(credentials);
         if (apiKey is not null)
         {
-            return CallerResolutionResult.Failed(CallerResolutionFailure.InvalidApiKey);
+            var result = await _apiKeyService.AuthenticateAsync(
+                apiKey,
+                credentials.RemoteIp,
+                cancellationToken);
+            if (result.Succeeded)
+            {
+                return CallerResolutionResult.Success(result.Caller!);
+            }
+
+            return CallerResolutionResult.Failed(result.Failure switch
+            {
+                ApiKeyAuthenticationFailure.IpNotAllowed => CallerResolutionFailure.ApiKeyIpNotAllowed,
+                ApiKeyAuthenticationFailure.Malformed => CallerResolutionFailure.MalformedApiKey,
+                ApiKeyAuthenticationFailure.Expired => CallerResolutionFailure.ExpiredApiKey,
+                ApiKeyAuthenticationFailure.Revoked => CallerResolutionFailure.RevokedApiKey,
+                _ => CallerResolutionFailure.InvalidApiKey
+            });
         }
 
         if (string.IsNullOrWhiteSpace(token))
@@ -83,13 +111,13 @@ public sealed class EfCallerResolver(
             return CallerResolutionResult.Failed(CallerResolutionFailure.Unauthenticated);
         }
 
-        var username = tokenService.ReadUsername(token, DateTimeOffset.UtcNow);
+        var username = _tokenService.ReadUsername(token, DateTimeOffset.UtcNow);
         if (username is null)
         {
             return CallerResolutionResult.Failed(CallerResolutionFailure.Unauthenticated);
         }
 
-        var user = await dbContext.SystemUsers
+        var user = await _dbContext.SystemUsers
             .AsNoTracking()
             .SingleOrDefaultAsync(row => row.Username == username, cancellationToken);
         if (user is null || user.Active != true)
@@ -99,7 +127,7 @@ public sealed class EfCallerResolver(
 
         var roleCodes = (user.Roles ?? "")
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var rows = await dbContext.SystemRoles
+        var rows = await _dbContext.SystemRoles
             .AsNoTracking()
             .Where(role => roleCodes.Contains(role.Code!))
             .ToListAsync(cancellationToken);

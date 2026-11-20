@@ -47,6 +47,18 @@ public sealed class RequestLanguageMiddleware(RequestDelegate next, IConfigurati
             "不能去掉自己的管理员角色" => "You cannot remove your own administrator role",
             "系统管理员角色必须保留全部权限（*），否则可能没人能再管理权限" =>
                 "The system administrator role must retain all permissions (*), or no one may be able to manage permissions",
+            "请填写名称" => "Please enter a name",
+            "API 密钥格式不对" => "Invalid API key format",
+            "API 密钥无效" => "Invalid API key",
+            "API 密钥已吊销" => "API key has been revoked",
+            "API 密钥已过期" => "API key has expired",
+            "日期时间格式不对" => "Invalid date and time format",
+            "密钥只显示这一次，请立即复制保存" => "The key is shown only once. Copy and save it now",
+            _ when message.StartsWith("API 密钥不允许从 ", StringComparison.Ordinal) &&
+                message.EndsWith(" 调用（IP 白名单）", StringComparison.Ordinal) =>
+                $"API key is not allowed to make calls from {message["API 密钥不允许从 ".Length..^" 调用（IP 白名单）".Length]} (IP allowlist)",
+            _ when message.StartsWith("IP 白名单格式不对：", StringComparison.Ordinal) =>
+                $"Invalid IP allowlist format: {message["IP 白名单格式不对：".Length..]}",
             _ when message.StartsWith("角色 ", StringComparison.Ordinal) && message.EndsWith(" 已存在", StringComparison.Ordinal) =>
                 $"Role {message["角色 ".Length..^" 已存在".Length]} already exists",
             _ when message.StartsWith("还有 ", StringComparison.Ordinal) && message.EndsWith(" 个用户用这个角色，先把他们换成别的角色", StringComparison.Ordinal) =>

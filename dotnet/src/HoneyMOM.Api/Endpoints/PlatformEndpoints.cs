@@ -63,9 +63,11 @@ public static class PlatformEndpoints
                     return error;
                 }
 
-                var user = await db.SystemUsers.AsNoTracking()
-                    .SingleOrDefaultAsync(row => row.Id == caller!.Id, cancellationToken);
-                if (user is null)
+                var user = caller!.IsApiKey
+                    ? null
+                    : await db.SystemUsers.AsNoTracking()
+                        .SingleOrDefaultAsync(row => row.Id == caller.Id, cancellationToken);
+                if (!caller.IsApiKey && user is null)
                 {
                     return EntityEndpoints.Error(context, StatusCodes.Status401Unauthorized, "账号已停用");
                 }
@@ -83,13 +85,15 @@ public static class PlatformEndpoints
                     .ToArray();
                 var userInfo = new Dictionary<string, object?>
                 {
-                    ["id"] = user.Id,
-                    ["username"] = user.Username,
-                    ["name"] = user.Name,
-                    ["roles"] = user.Roles,
-                    ["role_list"] = caller!.Roles.Select(role => role.Code).ToArray(),
-                    ["employee"] = user.Employee,
-                    ["active"] = user.Active,
+                    ["id"] = user?.Id,
+                    ["username"] = caller.Username,
+                    ["name"] = caller.Name,
+                    ["roles"] = caller.IsApiKey
+                        ? string.Join(',', caller.Roles.Select(role => role.Code))
+                        : user!.Roles,
+                    ["role_list"] = caller.Roles.Select(role => role.Code).ToArray(),
+                    ["employee"] = user?.Employee,
+                    ["active"] = user?.Active ?? true,
                     ["is_api_key"] = caller.IsApiKey,
                     ["scope"] = scope,
                     ["company"] = await db.Settings.AsNoTracking()

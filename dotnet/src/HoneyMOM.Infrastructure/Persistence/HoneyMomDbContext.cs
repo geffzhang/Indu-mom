@@ -19,6 +19,7 @@ public sealed class HoneyMomDbContext : DbContext
 
     public DbSet<SystemUserRow> SystemUsers => Set<SystemUserRow>();
     public DbSet<SystemRoleRow> SystemRoles => Set<SystemRoleRow>();
+    public DbSet<ApiKeyRow> ApiKeys => Set<ApiKeyRow>();
     public DbSet<SettingRow> Settings => Set<SettingRow>();
     public DbSet<AuditLogRow> AuditLogs => Set<AuditLogRow>();
 
@@ -83,6 +84,30 @@ public sealed class HoneyMomDbContext : DbContext
             entity.Property(row => row.CreatedAt).HasColumnName("created_at");
             entity.Property(row => row.UpdatedAt).HasColumnName("updated_at");
             entity.HasIndex(row => row.Code).IsUnique();
+        });
+
+        modelBuilder.Entity<ApiKeyRow>(entity =>
+        {
+            entity.ToTable("api_key");
+            entity.HasKey(row => row.Id);
+            entity.Property(row => row.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            entity.Property(row => row.Name).HasColumnName("name").HasMaxLength(100);
+            entity.Property(row => row.Prefix).HasColumnName("prefix").HasMaxLength(20);
+            entity.Property(row => row.KeyHash).HasColumnName("key_hash").HasMaxLength(64);
+            entity.Property(row => row.Roles).HasColumnName("roles").HasMaxLength(200);
+            entity.Property(row => row.Perms).HasColumnName("perms").HasColumnType("json");
+            entity.Property(row => row.Scope).HasColumnName("scope").HasColumnType("json");
+            entity.Property(row => row.IpAllow).HasColumnName("ip_allow").HasColumnType("text");
+            entity.Property(row => row.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(row => row.RevokedAt).HasColumnName("revoked_at");
+            entity.Property(row => row.RevokedBy).HasColumnName("revoked_by").HasMaxLength(80);
+            entity.Property(row => row.LastUsedAt).HasColumnName("last_used_at");
+            entity.Property(row => row.LastUsedIp).HasColumnName("last_used_ip").HasMaxLength(60);
+            entity.Property(row => row.UseCount).HasColumnName("use_count");
+            entity.Property(row => row.Remark).HasColumnName("remark").HasMaxLength(300);
+            entity.Property(row => row.CreatedBy).HasColumnName("created_by").HasMaxLength(80);
+            entity.Property(row => row.CreatedAt).HasColumnName("created_at");
+            entity.HasIndex(row => row.Prefix).IsUnique();
         });
 
         modelBuilder.Entity<SettingRow>(entity =>

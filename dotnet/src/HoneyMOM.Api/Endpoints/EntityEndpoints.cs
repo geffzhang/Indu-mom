@@ -389,13 +389,21 @@ public static class EntityEndpoints
             return (result.Caller, null);
         }
 
+        var statusCode = result.Failure == CallerResolutionFailure.ApiKeyIpNotAllowed
+            ? StatusCodes.Status403Forbidden
+            : StatusCodes.Status401Unauthorized;
+        var remoteIp = context.Connection.RemoteIpAddress?.ToString() ?? "";
         var message = result.Failure switch
         {
             CallerResolutionFailure.InactiveUser => "账号已停用",
+            CallerResolutionFailure.MalformedApiKey => "API 密钥格式不对",
+            CallerResolutionFailure.ExpiredApiKey => "API 密钥已过期",
+            CallerResolutionFailure.RevokedApiKey => "API 密钥已吊销",
             CallerResolutionFailure.InvalidApiKey or CallerResolutionFailure.ApiKeyNotAllowed => "API 密钥无效",
+            CallerResolutionFailure.ApiKeyIpNotAllowed => $"API 密钥不允许从 {remoteIp} 调用（IP 白名单）",
             _ => "请先登录"
         };
-        return (null, Error(context, StatusCodes.Status401Unauthorized, message));
+        return (null, Error(context, statusCode, message));
     }
 
     private static bool RequirePermission(
