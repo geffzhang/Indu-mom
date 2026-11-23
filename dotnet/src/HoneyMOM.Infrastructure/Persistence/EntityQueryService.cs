@@ -464,19 +464,26 @@ public sealed class EntityQueryService
             }
 
             var field = entity.Fields.FirstOrDefault(candidate => candidate.Name == name);
-            if (field is null || !entity.Table.Columns.Any(column => column.Name == name))
+            if (!entity.Table.Columns.Any(column => column.Name == name))
             {
                 continue;
             }
 
             object? value;
-            try
+            if (field is null)
             {
-                value = ConvertValue(field, JsonSerializer.SerializeToElement(rawValue));
+                value = rawValue;
             }
-            catch (FormatException)
+            else
             {
-                throw new EntityOperationException(400, $"筛选值不对：{rawValue}");
+                try
+                {
+                    value = ConvertValue(field, JsonSerializer.SerializeToElement(rawValue));
+                }
+                catch (FormatException)
+                {
+                    throw new EntityOperationException(400, $"筛选值不对：{rawValue}");
+                }
             }
 
             var parameterName = $"filter_{conditions.Count}";

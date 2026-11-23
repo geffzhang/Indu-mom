@@ -31,6 +31,22 @@ public sealed class EntityEndpointTests
     }
 
     [Fact]
+    public async Task ListFiltersByPhysicalColumnsWithoutEntityFields()
+    {
+        using var host = new ApiTestHost();
+        var targetId = await InsertPlantAsync(host, "A-1", "Foundry");
+        await InsertPlantAsync(host, "B-1", "Warehouse");
+        using var client = await CreateAdminClientAsync(host);
+
+        using var response = await client.GetAsync($"/api/e/plant?f_id={targetId}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(1, body.RootElement.GetProperty("total").GetInt32());
+        Assert.Equal(targetId, body.RootElement.GetProperty("items")[0].GetProperty("id").GetInt64());
+    }
+
+    [Fact]
     public async Task SortAndPaginationMatchReference()
     {
         using var host = new ApiTestHost();
@@ -157,6 +173,32 @@ public sealed class EntityEndpointTests
         Assert.Equal($"WO{datePrefix}002", secondItem.RootElement.GetProperty("item").GetProperty("code").GetString());
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task CreateGeneratesAutoCodeWhenSuppliedValueIsFalsy(string? code)
+    {
+        using var host = new ApiTestHost();
+        var productId = await InsertEntityAsync(host, "material", new Dictionary<string, object?>
+        {
+            ["code"] = "M-1",
+            ["name"] = "Material"
+        });
+        using var client = await CreateAdminClientAsync(host);
+
+        using var response = await client.PostAsJsonAsync(
+            "/api/e/work_order",
+            new { code, product = productId, qty = 1 });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var id = body.RootElement.GetProperty("id").GetInt64();
+        using var detail = await client.GetAsync($"/api/e/work_order/{id}");
+        using var item = JsonDocument.Parse(await detail.Content.ReadAsStringAsync());
+        var generatedCode = item.RootElement.GetProperty("item").GetProperty("code").GetString();
+
+        Assert.Matches(@"^WO\d{6}\d{3}$", generatedCode ?? "");
+    }
+
     [Fact]
     public async Task NullAndEmptyValuesFollowReferenceCoercion()
     {
@@ -212,6 +254,40 @@ public sealed class EntityEndpointTests
         Assert.Equal("After", body.RootElement.GetProperty("item").GetProperty("name").GetString());
         Assert.NotEqual("2000-01-01", body.RootElement.GetProperty("item").GetProperty("created_at").GetString());
         Assert.Equal("P-1", body.RootElement.GetProperty("item").GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task UpdateChecksExistenceBeforeConvertingMalformedFields()
+    {
+        using var host = new ApiTestHost();
+        using var client = await CreateAdminClientAsync(host);
+
+        using var response = await client.PutAsJsonAsync(
+            "/api/e/workshop/99999",
+            new { plant = "not-a-number" });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateChecksScopeBeforeConvertingMalformedFields()
+    {
+        using var host = new ApiTestHost();
+        await InsertPlantAsync(host, "A-1", "Allowed");
+        var hiddenPlantId = await InsertPlantAsync(host, "B-1", "Hidden");
+        var workshopId = await InsertEntityAsync(host, "workshop", new Dictionary<string, object?>
+        {
+            ["code"] = "W-1",
+            ["name"] = "Casting",
+            ["plant"] = checked((int)hiddenPlantId)
+        });
+        using var client = await CreateAdminClientAsync(host, [1]);
+
+        using var response = await client.PutAsJsonAsync(
+            $"/api/e/workshop/{workshopId}",
+            new { plant = "not-a-number" });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

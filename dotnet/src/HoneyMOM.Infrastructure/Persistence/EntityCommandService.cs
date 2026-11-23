@@ -71,7 +71,9 @@ public sealed class EntityCommandService
             values["updated_at"] = now;
         }
 
-        var hasAutoCode = entity.Fields.Any(field => !string.IsNullOrEmpty(field.Auto) && !values.ContainsKey(field.Name));
+        var hasAutoCode = entity.Fields.Any(field =>
+            !string.IsNullOrEmpty(field.Auto) &&
+            IsAutoCodeMissing(field.Name, values));
         if (hasAutoCode)
         {
             await AutoCodeLock.WaitAsync(cancellationToken);
@@ -129,7 +131,6 @@ public sealed class EntityCommandService
         CancellationToken cancellationToken)
     {
         var entity = RequireEntity(entityName);
-        var values = ConvertBody(entity, body, isUpdate: true);
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
@@ -145,6 +146,7 @@ public sealed class EntityCommandService
                 throw new EntityOperationException(403, "不在你的数据范围内");
             }
 
+            var values = ConvertBody(entity, body, isUpdate: true);
             if (entity.Table.Columns.Any(column => column.Name == "updated_at"))
             {
                 values["updated_at"] = DateTime.Now;
@@ -303,6 +305,10 @@ public sealed class EntityCommandService
         }
     }
 
+    private static bool IsAutoCodeMissing(string fieldName, IDictionary<string, object?> values) =>
+        !values.TryGetValue(fieldName, out var value) ||
+        string.IsNullOrEmpty(Convert.ToString(value, CultureInfo.InvariantCulture));
+
     private async Task<long> CountReferencesAsync(
         string entityName,
         long id,
@@ -355,7 +361,7 @@ public sealed class EntityCommandService
     {
         var codeField = entity.Fields.FirstOrDefault(field =>
             !string.IsNullOrEmpty(field.Auto) &&
-            !values.ContainsKey(field.Name));
+            IsAutoCodeMissing(field.Name, values));
         if (codeField is null)
         {
             return;
