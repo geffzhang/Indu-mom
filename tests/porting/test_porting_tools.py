@@ -1,11 +1,15 @@
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import sqlite3
 import subprocess
 import sys
 import tempfile
 import threading
 import unittest
+from contextlib import closing
+
+import platform_api_differential
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -49,6 +53,74 @@ def create_reference_repo(path):
 
 
 class PortingToolsTests(unittest.TestCase):
+    def test_platform_fixture_marks_builtin_ai_skills_initialized(self):
+        with tempfile.TemporaryDirectory() as temp:
+            database = Path(temp) / "fixture.db"
+            with closing(sqlite3.connect(database)) as connection:
+                connection.execute("CREATE TABLE ai_skill (key TEXT)")
+                connection.execute("CREATE TABLE audit_log (id INTEGER)")
+                connection.commit()
+
+            platform_api_differential.seed_builtin_ai_skills(database)
+
+            with closing(sqlite3.connect(database)) as connection:
+                keys = connection.execute(
+                    "SELECT key FROM ai_skill ORDER BY key"
+                ).fetchall()
+                audit_count = connection.execute(
+                    "SELECT COUNT(*) FROM audit_log"
+                ).fetchone()[0]
+            self.assertEqual(
+                keys,
+                [
+                    ("bottleneck_action",),
+                    ("energy_anomaly",),
+                    ("oee_loss_top5",),
+                    ("overdue_maint",),
+                    ("quality_pareto",),
+                    ("shift_summary",),
+                ],
+            )
+            self.assertEqual(audit_count, 0)
+
+    def test_time_derived_hash_normalization_validates_sha256_values(self):
+        digest = "a" * 64
+        normalized = platform_api_differential.apply_normalizations(
+            {"items": [{"hash": digest}]},
+            [{"path": "$.items[*].hash", "type": "time_derived_hash"}],
+        )
+        self.assertEqual(normalized, {"items": [{"hash": "<time_derived_hash>"}]})
+        with self.assertRaises(platform_api_differential.DifferentialFailure):
+            platform_api_differential.apply_normalizations(
+                {"items": [{"hash": "not-a-digest"}]},
+                [{"path": "$.items[*].hash", "type": "time_derived_hash"}],
+            )
+
+    def test_csv_normalization_supports_time_derived_hashes(self):
+        digest = "b" * 64
+        normalized = platform_api_differential.csv_body(
+            {"body": f"Sequence,Hash\n1,{digest}\n"},
+            [{"column": "Hash", "type": "time_derived_hash"}],
+        )
+        self.assertEqual(
+            normalized["rows"],
+            [["Sequence", "Hash"], ["1", "<time_derived_hash>"]],
+        )
+
+    def test_csv_normalization_compares_json_cells_by_value(self):
+        response_a = {
+            "body": "Changes\n\"{\"\"name\"\": [null, \"\"A\"\"], \"\"code\"\": [null, \"\"P-1\"\"]}\"\n"
+        }
+        response_b = {
+            "body": "Changes\n\"{\"\"code\"\": [null, \"\"P-1\"\"], \"\"name\"\": [null, \"\"A\"\"]}\"\n"
+        }
+        normalization = [{"column": "Changes", "type": "json_value"}]
+
+        self.assertEqual(
+            platform_api_differential.csv_body(response_a, normalization),
+            platform_api_differential.csv_body(response_b, normalization),
+        )
+
     def test_reference_lock_round_trip_and_commit_mismatch(self):
         with tempfile.TemporaryDirectory() as temp:
             repo = Path(temp) / "reference"

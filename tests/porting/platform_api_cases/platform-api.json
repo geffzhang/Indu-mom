@@ -1,0 +1,600 @@
+{
+  "version": 1,
+  "fixture": {
+    "mode": "production",
+    "admin": {
+      "username": "parity-admin",
+      "name": "Parity Administrator",
+      "password": "differential-password-123"
+    }
+  },
+  "setup_actions": [
+    {
+      "name": "create-first-administrator",
+      "method": "POST",
+      "path": "/api/setup/admin",
+      "body": {
+        "username": "{{admin_username}}",
+        "name": "{{admin_name}}",
+        "password": "{{admin_password}}"
+      },
+      "capture": {
+        "admin_token": "$.token"
+      },
+      "assertions": [
+        {
+          "path": "$.token",
+          "op": "nonempty"
+        },
+        {
+          "path": "$.user.username",
+          "op": "equals",
+          "value": "parity-admin"
+        }
+      ],
+      "server_specific_credentials": [
+        {
+          "path": "$.token",
+          "reason": "Each server signs its own session token; the token is exercised by later requests."
+        }
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "login-current-user-and-metadata",
+      "requests": [
+        {
+          "name": "login",
+          "method": "POST",
+          "path": "/api/login",
+          "body": {
+            "username": "{{admin_username}}",
+            "password": "{{admin_password}}"
+          },
+          "capture": {
+            "login_token": "$.token"
+          },
+          "assertions": [
+            {
+              "path": "$.token",
+              "op": "nonempty"
+            },
+            {
+              "path": "$.user.roles",
+              "op": "equals",
+              "value": "admin"
+            }
+          ],
+          "server_specific_credentials": [
+            {
+              "path": "$.token",
+              "reason": "Each server signs its own session token; the token is exercised by later requests."
+            }
+          ]
+        },
+        {
+          "name": "current-user",
+          "method": "GET",
+          "path": "/api/me",
+          "auth": "admin_token",
+          "normalize": [
+            {
+              "path": "$.now",
+              "type": "timestamp"
+            },
+            {
+              "path": "$.created_at",
+              "type": "timestamp"
+            },
+            {
+              "path": "$.updated_at",
+              "type": "timestamp"
+            }
+          ]
+        },
+        {
+          "name": "who-am-i",
+          "method": "GET",
+          "path": "/api/whoami",
+          "auth": "admin_token"
+        },
+        {
+          "name": "platform-meta",
+          "method": "GET",
+          "path": "/api/meta",
+          "auth": "admin_token",
+          "compare_paths": [
+            "$.lang",
+            "$.langs",
+            "$.demo",
+            "$.entities[*].name",
+            "$.entities[*].module",
+            "$.entities[*].mkey",
+            "$.entities[*].internal",
+            "$.entities[*].menu",
+            "$.entities[*].fields[*].name",
+            "$.entities[*].fields[*].t"
+          ],
+          "assertions": [
+            {
+              "path": "$.roles",
+              "op": "has_key",
+              "value": "admin"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "password-change-and-login",
+      "requests": [
+        {
+          "name": "change-password",
+          "method": "POST",
+          "path": "/api/me/password",
+          "auth": "admin_token",
+          "body": {
+            "old": "{{admin_password}}",
+            "new": "changed-password-123"
+          }
+        },
+        {
+          "name": "login-with-new-password",
+          "method": "POST",
+          "path": "/api/login",
+          "body": {
+            "username": "{{admin_username}}",
+            "password": "changed-password-123"
+          },
+          "capture": {
+            "changed_token": "$.token"
+          },
+          "server_specific_credentials": [
+            {
+              "path": "$.token",
+              "reason": "Each server signs its own session token; the token is exercised by later requests."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "generic-crud-filter-and-scope",
+      "requests": [
+        {
+          "name": "create-in-scope-plant",
+          "method": "POST",
+          "path": "/api/e/plant",
+          "auth": "changed_token",
+          "body": {
+            "code": "DIFF-A",
+            "name": "Differential Foundry A"
+          },
+          "capture": {
+            "plant_a_id": "$.id"
+          }
+        },
+        {
+          "name": "create-out-of-scope-plant",
+          "method": "POST",
+          "path": "/api/e/plant",
+          "auth": "changed_token",
+          "body": {
+            "code": "DIFF-B",
+            "name": "Differential Foundry B"
+          },
+          "capture": {
+            "plant_b_id": "$.id"
+          }
+        },
+        {
+          "name": "filter-plants",
+          "method": "GET",
+          "path": "/api/e/plant?q=Differential",
+          "auth": "changed_token",
+          "normalize": [
+            {
+              "path": "$.items[*].created_at",
+              "type": "timestamp"
+            },
+            {
+              "path": "$.items[*].updated_at",
+              "type": "timestamp"
+            }
+          ]
+        },
+        {
+          "name": "update-plant",
+          "method": "PUT",
+          "path": "/api/e/plant/{{plant_a_id}}",
+          "auth": "changed_token",
+          "body": {
+            "name": "Differential Foundry A Updated"
+          }
+        },
+        {
+          "name": "read-updated-plant",
+          "method": "GET",
+          "path": "/api/e/plant/{{plant_a_id}}",
+          "auth": "changed_token",
+          "normalize": [
+            {
+              "path": "$.item.created_at",
+              "type": "timestamp"
+            },
+            {
+              "path": "$.item.updated_at",
+              "type": "timestamp"
+            }
+          ]
+        },
+        {
+          "name": "apply-user-scope",
+          "method": "PUT",
+          "path": "/api/admin/users/1",
+          "auth": "changed_token",
+          "body": {
+            "roles": [
+              "admin"
+            ],
+            "scope": {
+              "plants": [
+                "{{plant_a_id}}"
+              ],
+              "workshops": [],
+              "lines": []
+            }
+          }
+        },
+        {
+          "name": "list-plants-with-scope",
+          "method": "GET",
+          "path": "/api/e/plant",
+          "auth": "changed_token",
+          "normalize": [
+            {
+              "path": "$.items[*].created_at",
+              "type": "timestamp"
+            },
+            {
+              "path": "$.items[*].updated_at",
+              "type": "timestamp"
+            }
+          ]
+        },
+        {
+          "name": "clear-user-scope",
+          "method": "PUT",
+          "path": "/api/admin/users/1",
+          "auth": "changed_token",
+          "body": {
+            "scope": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "role-and-api-key-lifecycle",
+      "requests": [
+        {
+          "name": "create-role",
+          "method": "POST",
+          "path": "/api/admin/roles",
+          "auth": "changed_token",
+          "body": {
+            "code": "parity_auditor",
+            "name": "Parity Auditor",
+            "perms": [
+              "system.audit.view",
+              "system.audit.view"
+            ],
+            "scope": {
+              "plants": [
+                "{{plant_a_id}}",
+                "{{plant_a_id}}"
+              ],
+              "workshops": [],
+              "lines": []
+            },
+            "remark": "differential corpus"
+          }
+        },
+        {
+          "name": "update-role",
+          "method": "PUT",
+          "path": "/api/admin/roles/parity_auditor",
+          "auth": "changed_token",
+          "body": {
+            "name": "Parity Auditor Updated",
+            "perms": [
+              "system.audit.view"
+            ],
+            "scope": null
+          }
+        },
+        {
+          "name": "create-api-key",
+          "method": "POST",
+          "path": "/api/admin/apikeys",
+          "auth": "changed_token",
+          "body": {
+            "name": "Parity Differential Key",
+            "roles": [
+              "admin"
+            ],
+            "scope": {
+              "plants": [
+                "{{plant_a_id}}"
+              ],
+              "workshops": [],
+              "lines": []
+            },
+            "remark": "differential corpus"
+          },
+          "capture": {
+            "api_key_id": "$.id",
+            "api_key": "$.key"
+          },
+          "assertions": [
+            {
+              "path": "$.key",
+              "op": "starts_with",
+              "value": "hmk_"
+            }
+          ],
+          "server_specific_credentials": [
+            {
+              "path": "$.key",
+              "reason": "API secrets are independently random and are exercised against their issuing server."
+            }
+          ]
+        },
+        {
+          "name": "authenticate-api-key",
+          "method": "GET",
+          "path": "/api/whoami",
+          "auth": "api_key"
+        },
+        {
+          "name": "list-api-keys",
+          "method": "GET",
+          "path": "/api/admin/apikeys",
+          "auth": "changed_token",
+          "normalize": [
+            {
+              "path": "$.items[*].created_at",
+              "type": "timestamp"
+            },
+            {
+              "path": "$.items[*].last_used_at",
+              "type": "timestamp"
+            }
+          ],
+          "assertions": [
+            {
+              "path": "$.items[*].key_hint",
+              "op": "starts_with",
+              "value": "hmk_"
+            }
+          ],
+          "server_specific_credentials": [
+            {
+              "path": "$.items[*].key_hint",
+              "reason": "The public key hint is derived from each independently random API secret."
+            }
+          ]
+        },
+        {
+          "name": "revoke-api-key",
+          "method": "POST",
+          "path": "/api/admin/apikeys/{{api_key_id}}/revoke",
+          "auth": "changed_token"
+        },
+        {
+          "name": "reject-revoked-api-key",
+          "method": "GET",
+          "path": "/api/me",
+          "auth": "api_key",
+          "expect_status": 401
+        }
+      ]
+    },
+    {
+      "name": "audit-list-export-and-verify",
+      "requests": [
+        {
+          "name": "filtered-audit-list",
+          "method": "GET",
+          "path": "/api/admin/audit?entity=plant&size=10",
+          "auth": "changed_token",
+          "normalize": [
+            {
+              "path": "$.items[*].time",
+              "type": "timestamp"
+            },
+            {
+              "path": "$.items[*].hash",
+              "type": "time_derived_hash",
+              "reason": "Audit hashes commit to independently generated request timestamps; both chains are separately verified."
+            }
+          ]
+        },
+        {
+          "name": "audit-facets",
+          "method": "GET",
+          "path": "/api/admin/audit/facets",
+          "auth": "changed_token"
+        },
+        {
+          "name": "export-audit-csv",
+          "method": "GET",
+          "path": "/api/admin/audit.csv?entity=plant",
+          "auth": "changed_token",
+          "csv_normalize": [
+            {
+              "column": "Time",
+              "type": "timestamp"
+            },
+            {
+              "column": "Hash",
+              "type": "time_derived_hash",
+              "reason": "Audit hashes commit to independently generated request timestamps; both chains are separately verified."
+            },
+            {
+              "column": "Changes",
+              "type": "json_value",
+              "reason": "The CSV embeds JSON objects whose key order and whitespace are not semantically significant."
+            },
+            {
+              "column": "Details",
+              "type": "json_value",
+              "reason": "The CSV embeds JSON objects whose key order and whitespace are not semantically significant."
+            }
+          ],
+          "assertions": [
+            {
+              "path": "$csv.bom",
+              "op": "equals",
+              "value": true
+            },
+            {
+              "path": "$csv.header",
+              "op": "contains",
+              "value": "Time"
+            }
+          ]
+        },
+        {
+          "name": "verify-audit-chain-after-export",
+          "method": "GET",
+          "path": "/api/admin/audit/verify",
+          "auth": "changed_token",
+          "assertions": [
+            {
+              "path": "$.ok",
+              "op": "equals",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reset-password-action",
+      "requests": [
+        {
+          "name": "reset-admin-password",
+          "method": "POST",
+          "path": "/api/e/sys_user/1/do/reset_pw",
+          "auth": "changed_token",
+          "body": {
+            "password": "reset-password-123"
+          }
+        },
+        {
+          "name": "login-with-reset-password",
+          "method": "POST",
+          "path": "/api/login",
+          "body": {
+            "username": "{{admin_username}}",
+            "password": "reset-password-123"
+          },
+          "server_specific_credentials": [
+            {
+              "path": "$.token",
+              "reason": "Each server signs its own session token."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "persisted_state": [
+    {
+      "name": "administrator",
+      "table": "sys_user",
+      "where": {
+        "username": "parity-admin"
+      },
+      "columns": [
+        "id",
+        "username",
+        "name",
+        "roles",
+        "active",
+        "scope"
+      ]
+    },
+    {
+      "name": "plants",
+      "table": "plant",
+      "where": {
+        "code": [
+          "DIFF-A",
+          "DIFF-B"
+        ]
+      },
+      "columns": [
+        "id",
+        "code",
+        "name"
+      ]
+    },
+    {
+      "name": "role",
+      "table": "sys_role",
+      "where": {
+        "code": "parity_auditor"
+      },
+      "columns": [
+        "id",
+        "code",
+        "name",
+        "perms",
+        "scope",
+        "builtin",
+        "remark"
+      ]
+    },
+    {
+      "name": "api-key",
+      "table": "api_key",
+      "where": {
+        "name": "Parity Differential Key"
+      },
+      "columns": [
+        "id",
+        "name",
+        "roles",
+        "perms",
+        "scope",
+        "ip_allow",
+        "revoked_by",
+        "use_count",
+        "remark",
+        "created_by"
+      ]
+    },
+    {
+      "name": "audit-events",
+      "table": "audit_log",
+      "where": {
+        "user": "parity-admin"
+      },
+      "columns": [
+        "id",
+        "seq",
+        "user",
+        "kind",
+        "target",
+        "entity",
+        "entity_id",
+        "action",
+        "detail",
+        "source",
+        "ip"
+      ]
+    }
+  ]
+}

@@ -40,17 +40,32 @@ public static class AdminApiKeyEndpoints
                 var items = new List<object>(records.Count);
                 foreach (var record in records)
                 {
-                    items.Add(await ToResponseAsync(db, record, cancellationToken));
+                    items.Add(await ToResponseAsync(
+                        db,
+                        record,
+                        cancellationToken,
+                        RequestLanguageMiddleware.GetLanguage(context)));
                 }
 
                 var storedRoles = await db.SystemRoles.AsNoTracking()
                     .OrderBy(role => role.Id)
                     .Select(role => new { code = role.Code, name = role.Name })
                     .ToListAsync(cancellationToken);
+                var language = RequestLanguageMiddleware.GetLanguage(context);
                 var roles = storedRoles.Count > 0
                     ? storedRoles
+                        .Select(role => new
+                        {
+                            code = role.code ?? "",
+                            name = RequestLanguageMiddleware.Translate(role.name ?? "", language)
+                        })
+                        .ToList()
                     : EfCallerResolver.DefaultRoles
-                        .Select(role => new { code = (string?)role.Key, name = (string?)role.Value.Name })
+                        .Select(role => new
+                        {
+                            code = role.Key,
+                            name = RequestLanguageMiddleware.Translate(role.Value.Name, language)
+                        })
                         .ToList();
                 return Results.Json(new { items, roles });
             });
@@ -203,7 +218,8 @@ public static class AdminApiKeyEndpoints
     private static async Task<object> ToResponseAsync(
         HoneyMomDbContext db,
         ApiKeyPublicRecord record,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string language)
     {
         var scope = ToScopeSelection(record.Scope);
         return new
@@ -214,7 +230,7 @@ public static class AdminApiKeyEndpoints
             roles = record.Roles,
             perms = record.Permissions,
             scope = PlatformEndpoints.ScopeResponse(scope),
-            scope_label = await PlatformEndpoints.ScopeLabelAsync(db, scope, cancellationToken),
+            scope_label = await PlatformEndpoints.ScopeLabelAsync(db, scope, cancellationToken, language),
             ip_allow = record.IpAllow,
             expires_at = record.ExpiresAt,
             revoked_at = record.RevokedAt,

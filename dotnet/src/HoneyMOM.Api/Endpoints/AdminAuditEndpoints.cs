@@ -75,7 +75,7 @@ public static class AdminAuditEndpoints
                 {
                     total,
                     items = rows.Select(ToResponse).ToArray(),
-                    sources = Sources
+                    sources = LocalizedSources(RequestLanguageMiddleware.GetLanguage(context))
                 });
             });
 
@@ -104,16 +104,21 @@ public static class AdminAuditEndpoints
                 var users = await DistinctAsync(db, "\"user\"", cancellationToken);
                 var entityNames = await DistinctAsync(db, "entity", cancellationToken);
                 var actions = await DistinctAsync(db, "kind", cancellationToken);
+                var language = RequestLanguageMiddleware.GetLanguage(context);
                 var entities = entityNames
                     .Order(StringComparer.Ordinal)
-                    .Select(name => new { name, label = catalog.Get(name)?.Label ?? name })
+                    .Select(name => new
+                    {
+                        name,
+                        label = RequestLanguageMiddleware.Translate(catalog.Get(name)?.Label ?? name, language)
+                    })
                     .ToArray();
                 return Results.Json(new
                 {
                     users = users.Order(StringComparer.Ordinal).ToArray(),
                     entities,
                     actions = actions.Order(StringComparer.Ordinal).ToArray(),
-                    sources = Sources
+                    sources = LocalizedSources(RequestLanguageMiddleware.GetLanguage(context))
                 });
             });
 
@@ -407,6 +412,12 @@ public static class AdminAuditEndpoints
 
         return output.ToString();
     }
+
+    private static IReadOnlyDictionary<string, string> LocalizedSources(string language) =>
+        Sources.ToDictionary(
+            pair => pair.Key,
+            pair => RequestLanguageMiddleware.Translate(pair.Value, language),
+            StringComparer.Ordinal);
 
     private static string JsonForCsv(string? value) =>
         string.IsNullOrWhiteSpace(value) ? "" : FormatJsonForCsv(value);

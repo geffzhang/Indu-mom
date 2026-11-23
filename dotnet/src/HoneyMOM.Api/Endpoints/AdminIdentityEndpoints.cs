@@ -123,6 +123,7 @@ public static class AdminIdentityEndpoints
                 HttpContext context,
                 ICallerResolver resolver,
                 HoneyMomDbContext db,
+                AuditService audit,
                 CancellationToken cancellationToken) =>
             {
                 var (caller, error) = await EntityEndpoints.ResolveCallerAsync(context, resolver, cancellationToken);
@@ -144,7 +145,12 @@ public static class AdminIdentityEndpoints
                 var items = new List<object>(rows.Count);
                 foreach (var role in rows)
                 {
-                    items.Add(await RoleOutputAsync(db, role, counts, cancellationToken));
+                    items.Add(await RoleOutputAsync(
+                        db,
+                        role,
+                        counts,
+                        cancellationToken,
+                        RequestLanguageMiddleware.GetLanguage(context)));
                 }
 
                 return Results.Json(new
@@ -376,7 +382,11 @@ public static class AdminIdentityEndpoints
                         roles = user.Roles,
                         active = user.Active,
                         scope = PlatformEndpoints.ScopeResponse(scope),
-                        scope_label = await PlatformEndpoints.ScopeLabelAsync(db, scope, cancellationToken),
+                        scope_label = await PlatformEndpoints.ScopeLabelAsync(
+                            db,
+                            scope,
+                            cancellationToken,
+                            RequestLanguageMiddleware.GetLanguage(context)),
                         role_list = SplitRoles(user.Roles)
                     });
                 }
@@ -392,6 +402,7 @@ public static class AdminIdentityEndpoints
                 HttpContext context,
                 ICallerResolver resolver,
                 HoneyMomDbContext db,
+                AuditService audit,
                 CancellationToken cancellationToken) =>
             {
                 var (caller, error) = await EntityEndpoints.ResolveCallerAsync(context, resolver, cancellationToken);
@@ -411,6 +422,16 @@ public static class AdminIdentityEndpoints
                     return EntityEndpoints.Error(context, StatusCodes.Status404NotFound, "没有这个用户");
                 }
 
+                var previousRoleText = user.Roles;
+                var previousScope = ReadScope(user.Scope);
+                var previousScopeJson = SerializeScope(previousScope is null
+                    ? null
+                    : new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal)
+                    {
+                        ["plants"] = previousScope.Plants,
+                        ["workshops"] = previousScope.Workshops,
+                        ["lines"] = previousScope.Lines
+                    });
                 if (body.TryGetValue("roles", out var rolesValue))
                 {
                     var roleCodes = ParseRoles(rolesValue);
@@ -441,7 +462,46 @@ public static class AdminIdentityEndpoints
                 }
 
                 user.UpdatedAt = DateTime.Now;
+                var updatedScope = ReadScope(user.Scope);
+                var updatedScopeJson = SerializeScope(updatedScope is null
+                    ? null
+                    : new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal)
+                    {
+                        ["plants"] = updatedScope.Plants,
+                        ["workshops"] = updatedScope.Workshops,
+                        ["lines"] = updatedScope.Lines
+                    });
+                var diff = new Dictionary<string, object?>(StringComparer.Ordinal);
+                if (previousRoleText != user.Roles)
+                {
+                    diff["roles"] = new object?[] { previousRoleText, user.Roles };
+                }
+
+                if (previousScopeJson != updatedScopeJson)
+                {
+                    diff["scope"] = new object?[]
+                    {
+                        PlatformEndpoints.ScopeResponse(previousScope),
+                        PlatformEndpoints.ScopeResponse(updatedScope)
+                    };
+                }
+
+                await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
                 await db.SaveChangesAsync(cancellationToken);
+                if (diff.Count > 0)
+                {
+                    await audit.AppendAsync(
+                        db,
+                        new AuditEntry(
+                            "update",
+                            "sys_user",
+                            user.Id,
+                            Diff: diff,
+                            User: caller!.Username),
+                        cancellationToken);
+                }
+
+                await transaction.CommitAsync(cancellationToken);
                 return Results.Json(new { ok = true });
             });
 
@@ -613,7 +673,8 @@ public static class AdminIdentityEndpoints
         HoneyMomDbContext db,
         SystemRoleRow role,
         IReadOnlyDictionary<string, int> counts,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string language)
     {
         var scope = ReadScope(role.Scope);
         return new
@@ -622,7 +683,7 @@ public static class AdminIdentityEndpoints
             name = role.Name,
             perms = PlatformEndpoints.ParseStringArray(role.Perms),
             scope = PlatformEndpoints.ScopeResponse(scope),
-            scope_label = await PlatformEndpoints.ScopeLabelAsync(db, scope, cancellationToken),
+            scope_label = await PlatformEndpoints.ScopeLabelAsync(db, scope, cancellationToken, language),
             builtin = role.Builtin == true,
             remark = role.Remark ?? "",
             users = counts.GetValueOrDefault(role.Code ?? ""),

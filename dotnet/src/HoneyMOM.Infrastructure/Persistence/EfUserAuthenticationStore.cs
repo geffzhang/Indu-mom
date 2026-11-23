@@ -1,3 +1,4 @@
+using HoneyMOM.Application.Auditing;
 using HoneyMOM.Application.Users;
 using HoneyMOM.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -45,7 +46,7 @@ public sealed class EfUserAuthenticationStore(HoneyMomDbContext dbContext) : IUs
 
         var user = await dbContext.SystemUsers
             .SingleOrDefaultAsync(row => row.Username == username, cancellationToken);
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         if (user is null)
         {
             user = new SystemUserRow
@@ -63,6 +64,7 @@ public sealed class EfUserAuthenticationStore(HoneyMomDbContext dbContext) : IUs
         user.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        var request = AuditRequestContext.Current;
         dbContext.AuditLogs.Add(new AuditLogRow
         {
             Time = now,
@@ -72,7 +74,8 @@ public sealed class EfUserAuthenticationStore(HoneyMomDbContext dbContext) : IUs
             Entity = "sys_user",
             EntityId = user.Id,
             Action = "create_admin",
-            Source = "ui"
+            Source = request?.Source ?? "ui",
+            Ip = request?.Ip
         });
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -87,16 +90,18 @@ public sealed class EfUserAuthenticationStore(HoneyMomDbContext dbContext) : IUs
         CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var request = AuditRequestContext.Current;
         dbContext.AuditLogs.Add(new AuditLogRow
         {
-            Time = DateTime.UtcNow,
+            Time = DateTime.Now,
             User = username[..Math.Min(username.Length, 80)],
             Kind = action,
             Target = target[..Math.Min(target.Length, 190)],
             Entity = "sys_user",
             EntityId = userId,
             Action = action,
-            Source = "ui"
+            Source = request?.Source ?? "ui",
+            Ip = request?.Ip
         });
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

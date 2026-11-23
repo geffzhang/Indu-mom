@@ -284,10 +284,19 @@ public sealed class EntityEndpointTests
         var savedUser = await verifyDb.SystemUsers.SingleAsync(user => user.Id == targetId);
 
         Assert.True(new PythonCompatiblePasswordHasher().Verify("new-password", savedUser.PasswordHash));
-        Assert.Contains(
-            await verifyDb.AuditLogs.AsNoTracking().ToListAsync(),
+        var audit = await verifyDb.AuditLogs.AsNoTracking().SingleAsync(
             entry => entry.Action == "reset_pw" && entry.Entity == "sys_user" && entry.EntityId == targetId);
+        Assert.Contains("password_hash", audit.Diff);
+        using var detail = JsonDocument.Parse(audit.Detail!);
+        Assert.Equal("Reset password", detail.RootElement.GetProperty("action").GetString());
+        Assert.Equal(
+            "new-password",
+            detail.RootElement.GetProperty("body").GetProperty("password").GetString());
+        Assert.Equal(
+            "Password reset",
+            detail.RootElement.GetProperty("result").GetProperty("msg").GetString());
         Assert.True(body.RootElement.GetProperty("ok").GetBoolean());
+        Assert.Equal("Password reset", body.RootElement.GetProperty("msg").GetString());
     }
 
     [Fact]

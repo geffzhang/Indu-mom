@@ -64,6 +64,47 @@ public sealed class AdminAuditEndpointTests
     }
 
     [Fact]
+    public async Task AuditSourceLabelsFollowTheRequestLanguage()
+    {
+        using var host = new ApiTestHost();
+        using var client = (await PlatformTestSupport.CreateClientAsync(host)).Client;
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/audit");
+        request.Headers.Add("X-Lang", "en");
+
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var sources = body.RootElement.GetProperty("sources");
+
+        Assert.Equal("UI", sources.GetProperty("ui").GetString());
+        Assert.Equal("API", sources.GetProperty("api").GetString());
+        Assert.Equal("Collection", sources.GetProperty("collector").GetString());
+    }
+
+    [Fact]
+    public async Task AuditFacetEntityLabelsFollowTheRequestLanguage()
+    {
+        using var host = new ApiTestHost();
+        await SeedAuditAsync(host);
+        using var client = (await PlatformTestSupport.CreateClientAsync(host)).Client;
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/audit/facets");
+        request.Headers.Add("X-Lang", "en");
+
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var entities = body.RootElement.GetProperty("entities");
+        Assert.Contains(
+            entities.EnumerateArray(),
+            entity => entity.GetProperty("name").GetString() == "plant" &&
+                entity.GetProperty("label").GetString() == "Plant");
+        Assert.Contains(
+            entities.EnumerateArray(),
+            entity => entity.GetProperty("name").GetString() == "sys_user" &&
+                entity.GetProperty("label").GetString() == "User");
+    }
+
+    [Fact]
     public async Task AuditExportRequiresExportPermissionAndRecordsExport()
     {
         using var host = new ApiTestHost();
@@ -124,6 +165,14 @@ public sealed class AdminAuditEndpointTests
         Assert.StartsWith("\uFEFF", Encoding.UTF8.GetString(bytes));
         Assert.Contains("序号,时间,用户,动作,对象,对象ID,目标,来源,IP,改动,详情,哈希", Encoding.UTF8.GetString(bytes));
         Assert.Contains("\"plant:P-1,foundry\"", Encoding.UTF8.GetString(bytes));
+
+        using var englishRequest = new HttpRequestMessage(HttpMethod.Get, "/api/admin/audit.csv?entity=plant");
+        englishRequest.Headers.Add("X-Lang", "en");
+        using var englishResponse = await client.SendAsync(englishRequest);
+        Assert.Equal(HttpStatusCode.OK, englishResponse.StatusCode);
+        var englishCsv = Encoding.UTF8.GetString(await englishResponse.Content.ReadAsByteArrayAsync());
+        Assert.Contains("Sequence,Time,User,Action,Object,Object ID,Target,Source,IP,Changes,Details,Hash", englishCsv);
+        Assert.Contains(",界面,", englishCsv);
     }
 
     private static async Task SeedAuditAsync(ApiTestHost host)

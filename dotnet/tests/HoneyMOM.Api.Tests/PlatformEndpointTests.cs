@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using HoneyMOM.Infrastructure.Persistence;
 using HoneyMOM.Infrastructure.Persistence.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -45,6 +46,25 @@ public sealed class PlatformEndpointTests
     }
 
     [Fact]
+    public async Task MeMatchesReferenceSessionProjectionAndEnglishScopeLabel()
+    {
+        using var host = new ApiTestHost();
+        using var client = (await PlatformTestSupport.CreateClientAsync(host)).Client;
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/me");
+        request.Headers.Add("X-Lang", "en");
+
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = body.RootElement;
+
+        Assert.True(root.TryGetProperty("created_at", out _));
+        Assert.True(root.TryGetProperty("updated_at", out _));
+        Assert.False(root.TryGetProperty("is_api_key", out _));
+        Assert.Equal("All", root.GetProperty("scope_label").GetString());
+    }
+
+    [Fact]
     public async Task PasswordChangeChecksOldPasswordAndMinimumLength()
     {
         using var host = new ApiTestHost();
@@ -75,6 +95,50 @@ public sealed class PlatformEndpointTests
         Assert.Equal("原密码不对", wrongChineseBody.RootElement.GetProperty("detail").GetString());
         Assert.Equal("New password must be at least 6 characters", shortBody.RootElement.GetProperty("detail").GetString());
         Assert.Equal(HttpStatusCode.OK, valid.StatusCode);
+    }
+
+    [Fact]
+    public async Task PasswordChangeAuditsTheRedactedUserUpdate()
+    {
+        using var host = new ApiTestHost();
+        using var client = (await PlatformTestSupport.CreateClientAsync(host)).Client;
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/me/password")
+        {
+            Content = JsonContent.Create(new { old = "admin-password", @new = "changed-password" })
+        };
+        request.Headers.Add("X-Forwarded-For", "203.0.113.8");
+
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = host.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HoneyMomDbContext>();
+        var audit = await db.AuditLogs.SingleAsync(row =>
+            row.Action == "update" && row.Entity == "sys_user" && row.EntityId == 1);
+        Assert.Equal("ui", audit.Source);
+        Assert.Equal("203.0.113.8", audit.Ip);
+        Assert.Contains("***", audit.Diff);
+        Assert.DoesNotContain("changed-password", audit.Diff);
+    }
+
+    [Fact]
+    public async Task EntityAuditUsesForwardedClientIp()
+    {
+        using var host = new ApiTestHost();
+        using var client = (await PlatformTestSupport.CreateClientAsync(host)).Client;
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/e/plant")
+        {
+            Content = JsonContent.Create(new { code = "P-IP", name = "IP Foundry" })
+        };
+        request.Headers.Add("X-Forwarded-For", "203.0.113.9");
+
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = host.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HoneyMomDbContext>();
+        var audit = await db.AuditLogs.SingleAsync(row => row.Entity == "plant" && row.Action == "create");
+        Assert.Equal("203.0.113.9", audit.Ip);
     }
 
     [Fact]

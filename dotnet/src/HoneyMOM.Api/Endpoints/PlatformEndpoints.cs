@@ -3,6 +3,7 @@ using System.Text.Json;
 using Dapper;
 using HoneyMOM.Api.Middleware;
 using HoneyMOM.Application.Abstractions;
+using HoneyMOM.Application.Auditing;
 using HoneyMOM.Application.Metadata;
 using HoneyMOM.Application.Security;
 using HoneyMOM.Infrastructure.Persistence;
@@ -73,7 +74,11 @@ public static class PlatformEndpoints
                 }
 
                 var scope = ScopeResponse(ScopeEvaluator.ResolveEffectiveScope(caller!));
-                var scopeLabel = await ScopeLabelAsync(db, ScopeEvaluator.ResolveEffectiveScope(caller!), cancellationToken);
+                var scopeLabel = await ScopeLabelAsync(
+                    db,
+                    ScopeEvaluator.ResolveEffectiveScope(caller!),
+                    cancellationToken,
+                    RequestLanguageMiddleware.GetLanguage(context));
                 var writable = catalog.Entities
                     .Where(entity => new[] { "create", "update", "delete" }
                         .Any(operation => PermissionEvaluator.Allows(
@@ -94,7 +99,6 @@ public static class PlatformEndpoints
                     ["role_list"] = caller.Roles.Select(role => role.Code).ToArray(),
                     ["employee"] = user?.Employee,
                     ["active"] = user?.Active ?? true,
-                    ["is_api_key"] = caller.IsApiKey,
                     ["scope"] = scope,
                     ["company"] = await db.Settings.AsNoTracking()
                         .Where(setting => setting.Key == "company")
@@ -104,6 +108,17 @@ public static class PlatformEndpoints
                     ["writable"] = writable,
                     ["perms"] = PermissionPatterns(caller)
                 };
+                if (caller.IsApiKey)
+                {
+                    userInfo["is_api_key"] = true;
+                }
+
+                if (user is not null)
+                {
+                    userInfo["created_at"] = user.CreatedAt;
+                    userInfo["updated_at"] = user.UpdatedAt;
+                }
+
                 userInfo["scope_label"] = scopeLabel;
                 return Results.Json(userInfo);
             });
@@ -116,6 +131,7 @@ public static class PlatformEndpoints
                 ICallerResolver resolver,
                 HoneyMomDbContext db,
                 IPasswordHasher passwordHasher,
+                AuditService auditService,
                 CancellationToken cancellationToken) =>
             {
                 var (caller, error) = await EntityEndpoints.ResolveCallerAsync(context, resolver, cancellationToken);
@@ -144,9 +160,24 @@ public static class PlatformEndpoints
                     return EntityEndpoints.Error(context, StatusCodes.Status400BadRequest, "新密码至少 6 位");
                 }
 
+                var previousHash = user.PasswordHash;
                 user.PasswordHash = passwordHasher.Hash(newPassword);
                 user.UpdatedAt = DateTime.Now;
+                await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
                 await db.SaveChangesAsync(cancellationToken);
+                await auditService.AppendAsync(
+                    db,
+                    new AuditEntry(
+                        "update",
+                        "sys_user",
+                        user.Id,
+                        Diff: new Dictionary<string, object?>(StringComparer.Ordinal)
+                        {
+                            ["password_hash"] = new[] { previousHash, user.PasswordHash }
+                        },
+                        User: caller!.Username),
+                    cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
                 return Results.Json(new { ok = true });
             });
 
@@ -217,7 +248,11 @@ public static class PlatformEndpoints
                     roles = caller.Roles.Select(role => role.Code).ToArray(),
                     perms = PermissionPatterns(caller),
                     scope = ScopeResponse(scope),
-                    scope_label = await ScopeLabelAsync(db, scope, cancellationToken)
+                    scope_label = await ScopeLabelAsync(
+                        db,
+                        scope,
+                        cancellationToken,
+                        RequestLanguageMiddleware.GetLanguage(context))
                 });
             });
 
@@ -250,11 +285,12 @@ public static class PlatformEndpoints
     internal static async Task<string> ScopeLabelAsync(
         HoneyMomDbContext db,
         ScopeSelection? scope,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string language = "en")
     {
         if (scope is null)
         {
-            return "全部";
+            return RequestLanguageMiddleware.Translate("全部", language);
         }
 
         var names = new List<string>();
@@ -279,7 +315,9 @@ public static class PlatformEndpoints
             }
         }
 
-        return names.Count == 0 ? "（空）" : string.Join("、", names);
+        return names.Count == 0
+            ? RequestLanguageMiddleware.Translate("（空）", language)
+            : string.Join("、", names);
     }
 
     internal static IReadOnlyList<string> ParseStringArray(string? json)

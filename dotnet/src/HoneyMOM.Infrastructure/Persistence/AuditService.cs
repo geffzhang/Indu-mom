@@ -54,7 +54,8 @@ public sealed class AuditService
             var user = entry.User ?? "system";
             var kind = entry.Kind ?? entry.Action;
             var target = entry.Target ?? DefaultTarget(entry) ?? "";
-            var source = entry.Source ?? "ui";
+            var request = AuditRequestContext.Current;
+            var source = request?.Source ?? entry.Source ?? "ui";
             context.AuditLogs.Add(new AuditLogRow
             {
                 Time = time.AddTicks(-(time.Ticks % TimeSpan.TicksPerSecond)),
@@ -67,7 +68,7 @@ public sealed class AuditService
                 Diff = diff is null ? null : SerializeJson(diff),
                 Detail = entry.Detail is null ? null : SerializeJson(entry.Detail),
                 Source = source[..Math.Min(source.Length, 20)],
-                Ip = entry.Ip
+                Ip = entry.Ip ?? request?.Ip
             });
             await context.SaveChangesAsync(cancellationToken);
             if (ownsTransaction)

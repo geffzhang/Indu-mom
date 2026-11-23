@@ -119,6 +119,34 @@ public sealed class AdminIdentityEndpointTests
     }
 
     [Fact]
+    public async Task UserScopeUpdateWritesAnAuditRecordWithRequestIp()
+    {
+        using var host = new ApiTestHost();
+        var (client, userId) = await PlatformTestSupport.CreateClientAsync(host);
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"/api/admin/users/{userId}")
+        {
+            Content = JsonContent.Create(new
+            {
+                roles = new[] { "admin" },
+                scope = new { plants = new[] { 1 }, workshops = Array.Empty<int>(), lines = Array.Empty<int>() }
+            })
+        };
+        request.Headers.Add("X-Forwarded-For", "203.0.113.10");
+
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = host.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HoneyMomDbContext>();
+        var audit = await db.AuditLogs.SingleAsync(row =>
+            row.Action == "update" && row.Entity == "sys_user" && row.EntityId == userId);
+        Assert.Equal("admin", audit.User);
+        Assert.Equal("ui", audit.Source);
+        Assert.Equal("203.0.113.10", audit.Ip);
+        Assert.Contains("scope", audit.Diff);
+    }
+
+    [Fact]
     public async Task OrganizationTreeIncludesOrphans()
     {
         using var host = new ApiTestHost();

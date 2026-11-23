@@ -348,19 +348,37 @@ public static class EntityEndpoints
                             body ?? new Dictionary<string, JsonElement>(StringComparer.Ordinal),
                             caller!),
                         cancellationToken);
+                    var after = await ReadActionRowAsync(dbContext, schema, rid, cancellationToken);
+                    var actionDiff = BuildActionDiff(row, after);
+                    var language = RequestLanguageMiddleware.GetLanguage(context);
+                    var translatedResult = result.ToDictionary(
+                        pair => pair.Key,
+                        pair => pair.Key == "msg" && pair.Value is string message
+                            ? RequestLanguageMiddleware.Translate(message, language)
+                            : pair.Value,
+                        StringComparer.Ordinal);
+                    var actionDetail = new
+                    {
+                        action = RequestLanguageMiddleware.Translate(
+                            schema.Actions.GetValueOrDefault(action, action),
+                            language),
+                        body = body is { Count: > 0 } ? body : null,
+                        result = translatedResult.Count == 0 ? null : translatedResult
+                    };
                     await auditService.AppendAsync(
                         dbContext,
                         new HoneyMOM.Application.Auditing.AuditEntry(
                             action,
                             entity,
                             checked((int)rid),
+                            Diff: actionDiff,
                             User: caller!.Username,
-                            Detail: new { action = schema.Actions.GetValueOrDefault(action, action) },
+                            Detail: actionDetail,
                             Source: "ui"),
                         cancellationToken);
                     await transaction.CommitAsync(cancellationToken);
                     return Results.Json(new Dictionary<string, object?> { ["ok"] = true }
-                        .Concat(result)
+                        .Concat(translatedResult)
                         .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal));
                 }
                 catch (EntityOperationException exception)
@@ -460,7 +478,13 @@ public static class EntityEndpoints
                     ["id"] = user.Id,
                     ["username"] = user.Username,
                     ["name"] = user.Name,
-                    ["roles"] = user.Roles
+                    ["roles"] = user.Roles,
+                    ["employee"] = user.Employee,
+                    ["active"] = user.Active,
+                    ["password_hash"] = user.PasswordHash,
+                    ["created_at"] = user.CreatedAt,
+                    ["updated_at"] = user.UpdatedAt,
+                    ["scope"] = user.Scope
                 };
         }
 
@@ -470,6 +494,34 @@ public static class EntityEndpoints
                 item => EF.Property<int>(item, "id") == id,
                 cancellationToken);
         return row;
+    }
+
+    private static IReadOnlyDictionary<string, object?>? BuildActionDiff(
+        IReadOnlyDictionary<string, object?> before,
+        IReadOnlyDictionary<string, object?>? after)
+    {
+        if (after is null)
+        {
+            return null;
+        }
+
+        var changes = new Dictionary<string, object?>(StringComparer.Ordinal);
+        foreach (var key in before.Keys.Union(after.Keys, StringComparer.Ordinal))
+        {
+            if (key is "id" or "created_at" or "updated_at")
+            {
+                continue;
+            }
+
+            var oldValue = before.GetValueOrDefault(key);
+            var newValue = after.GetValueOrDefault(key);
+            if (JsonSerializer.Serialize(oldValue) != JsonSerializer.Serialize(newValue))
+            {
+                changes[key] = new object?[] { oldValue, newValue };
+            }
+        }
+
+        return changes.Count == 0 ? null : changes;
     }
 
     private static string BuildCsv(

@@ -62,6 +62,7 @@ builder.Services.AddScoped<IEntityActionHandler, SystemUserResetPasswordHandler>
 var app = builder.Build();
 
 app.UseMiddleware<RequestLanguageMiddleware>();
+app.UseMiddleware<RequestAuditContextMiddleware>();
 app.UseMiddleware<ApiErrorMiddleware>();
 
 app.MapGet("/health", () => Results.Json(new { status = "ok" }));
