@@ -99,12 +99,15 @@ class PortingToolsTests(unittest.TestCase):
     def test_csv_normalization_supports_time_derived_hashes(self):
         digest = "b" * 64
         normalized = platform_api_differential.csv_body(
-            {"body": f"Sequence,Hash\n1,{digest}\n"},
-            [{"column": "Hash", "type": "time_derived_hash"}],
+            {"body": f"Sequence,Time,Hash\n1,2024-01-02T03:04:05,{digest}\n"},
+            [
+                {"column": "Time", "type": "timestamp"},
+                {"column": "Hash", "type": "time_derived_hash"},
+            ],
         )
         self.assertEqual(
             normalized["rows"],
-            [["Sequence", "Hash"], ["1", "<time_derived_hash>"]],
+            [["Sequence", "Time", "Hash"], ["1", "<timestamp>", "<time_derived_hash>"]],
         )
 
     def test_csv_normalization_compares_json_cells_by_value(self):
@@ -120,6 +123,9 @@ class PortingToolsTests(unittest.TestCase):
             platform_api_differential.csv_body(response_a, normalization),
             platform_api_differential.csv_body(response_b, normalization),
         )
+
+    def test_persisted_json_null_matches_sql_null(self):
+        self.assertIsNone(platform_api_differential.canonical_database_value("null", True))
 
     def test_reference_lock_round_trip_and_commit_mismatch(self):
         with tempfile.TemporaryDirectory() as temp:

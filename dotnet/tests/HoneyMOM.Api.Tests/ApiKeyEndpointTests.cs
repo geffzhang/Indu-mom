@@ -2,6 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HoneyMOM.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace HoneyMOM.Api.Tests;
@@ -22,6 +25,19 @@ public sealed class ApiKeyEndpointTests
         var key = createdBody.RootElement.GetProperty("key").GetString()!;
         Assert.StartsWith("hmk_", key, StringComparison.Ordinal);
         var keyId = createdBody.RootElement.GetProperty("id").GetInt32();
+
+        using (var scope = host.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<HoneyMomDbContext>();
+            var audit = await db.AuditLogs.SingleAsync(row => row.Action == "apikey_create");
+            using var detail = JsonDocument.Parse(audit.Detail!);
+            Assert.Equal("integration", detail.RootElement.GetProperty("name").GetString());
+            Assert.Equal("operator", detail.RootElement.GetProperty("roles")[0].GetString());
+            Assert.Equal("system.audit.view", detail.RootElement.GetProperty("perms")[0].GetString());
+            Assert.Equal(JsonValueKind.Null, detail.RootElement.GetProperty("scope").ValueKind);
+            Assert.Equal(JsonValueKind.Null, detail.RootElement.GetProperty("expires_at").ValueKind);
+            Assert.Equal(JsonValueKind.Null, detail.RootElement.GetProperty("ip_allow").ValueKind);
+        }
 
         using var listed = await client.GetAsync("/api/admin/apikeys");
         Assert.Equal(HttpStatusCode.OK, listed.StatusCode);

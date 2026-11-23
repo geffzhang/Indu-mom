@@ -130,7 +130,7 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - name: Install Python fixture dependencies
-        run: pip install fastapi sqlalchemy
+        run: pip install fastapi sqlalchemy "uvicorn[standard]"
       - name: Read locked Python reference commit
         id: reference
         run: |
@@ -153,6 +153,8 @@ jobs:
         run: python -m unittest discover -s tests/porting -v
       - name: .NET Release build
         run: dotnet build dotnet/HoneyMOM.sln -c Release
+      - name: Platform API differential scenarios
+        run: python tests/porting/platform_api_differential.py --reference honeymom-python-reference
       - name: .NET Release tests (SQLite and PostgreSQL)
         run: dotnet test dotnet/HoneyMOM.sln -c Release
 

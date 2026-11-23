@@ -524,7 +524,8 @@
         "roles",
         "active",
         "scope"
-      ]
+      ],
+      "json_columns": ["scope"]
     },
     {
       "name": "plants",
@@ -555,7 +556,8 @@
         "scope",
         "builtin",
         "remark"
-      ]
+      ],
+      "json_columns": ["scope"]
     },
     {
       "name": "api-key",
@@ -591,7 +593,6 @@
         "entity",
         "entity_id",
         "action",
-        "detail",
         "source",
         "ip"
       ]

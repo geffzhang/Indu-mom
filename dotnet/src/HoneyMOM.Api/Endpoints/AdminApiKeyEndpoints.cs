@@ -109,7 +109,7 @@ public static class AdminApiKeyEndpoints
                         "apikey_create",
                         "api_key",
                         created.Public.Id,
-                        Detail: CreateAuditDetail(body),
+                        Detail: CreateAuditDetail(body, includeName: true, includeDefaults: true),
                         Target: $"apikey:{created.Public.Id}",
                         User: caller!.Username),
                     cancellationToken);
@@ -260,12 +260,16 @@ public static class AdminApiKeyEndpoints
 
     private static object CreateAuditDetail(
         IReadOnlyDictionary<string, JsonElement> body,
-        bool includeName = false)
+        bool includeName = false,
+        bool includeDefaults = false)
     {
         var keys = new[] { "roles", "perms", "scope", "expires_at", "ip_allow" }
             .Concat(includeName ? ["name"] : [])
-            .Where(body.ContainsKey)
-            .ToDictionary(key => key, key => (object?)body[key], StringComparer.Ordinal);
+            .Where(key => includeDefaults || body.ContainsKey(key))
+            .ToDictionary(
+                key => key,
+                key => body.TryGetValue(key, out var value) ? (object?)value : null,
+                StringComparer.Ordinal);
         return keys;
     }
 

@@ -95,7 +95,12 @@ public sealed class EntityEndpointTests
         using var host = new ApiTestHost();
         using var client = await CreateAdminClientAsync(host);
 
-        using var response = await client.PostAsJsonAsync("/api/e/plant", new { code = "P-1" });
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/e/plant")
+        {
+            Content = JsonContent.Create(new { code = "P-1" })
+        };
+        request.Headers.Add("X-Lang", "zh-CN");
+        using var response = await client.SendAsync(request);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
@@ -289,12 +294,11 @@ public sealed class EntityEndpointTests
         Assert.Contains("password_hash", audit.Diff);
         using var detail = JsonDocument.Parse(audit.Detail!);
         Assert.Equal("Reset password", detail.RootElement.GetProperty("action").GetString());
-        Assert.Equal(
-            "new-password",
-            detail.RootElement.GetProperty("body").GetProperty("password").GetString());
+        Assert.Equal(JsonValueKind.Null, detail.RootElement.GetProperty("body").ValueKind);
         Assert.Equal(
             "Password reset",
             detail.RootElement.GetProperty("result").GetProperty("msg").GetString());
+        Assert.DoesNotContain("new-password", audit.Detail);
         Assert.True(body.RootElement.GetProperty("ok").GetBoolean());
         Assert.Equal("Password reset", body.RootElement.GetProperty("msg").GetString());
     }

@@ -437,6 +437,7 @@ def csv_body(response, normalizations):
             if index < len(row) and row[index]:
                 if kind == "timestamp":
                     parse_timestamp(row[index])
+                    row[index] = "<timestamp>"
                 elif kind == "time_derived_hash":
                     if not SHA256_HEX.fullmatch(row[index]):
                         raise DifferentialFailure(f"CSV column {column!r} contains a non-SHA-256 hash")
@@ -537,14 +538,16 @@ def quoted_identifier(name):
     return f'"{name}"'
 
 
-def canonical_database_value(value):
+def canonical_database_value(value, is_json=False):
     if isinstance(value, bytes):
         return {"bytes": value.hex()}
-    if isinstance(value, str) and value[:1] in {"{", "["}:
+    if isinstance(value, str) and (is_json or value[:1] in {"{", "["}):
         try:
             parsed = json.loads(value)
         except json.JSONDecodeError:
             return value
+        if is_json and not isinstance(parsed, (dict, list)):
+            return parsed
         return json.dumps(parsed, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return value
 
@@ -577,8 +580,12 @@ def read_persisted_state(database, specifications):
                 f"SELECT {projection} FROM {table}{where} ORDER BY {order}",
                 parameters,
             ).fetchall()
+            json_columns = set(specification.get("json_columns", []))
             state[specification["name"]] = [
-                [canonical_database_value(value) for value in row]
+                [
+                    canonical_database_value(value, columns[index] in json_columns)
+                    for index, value in enumerate(row)
+                ]
                 for row in rows
             ]
     return state

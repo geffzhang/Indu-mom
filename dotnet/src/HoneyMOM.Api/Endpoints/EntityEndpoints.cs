@@ -362,7 +362,7 @@ public static class EntityEndpoints
                         action = RequestLanguageMiddleware.Translate(
                             schema.Actions.GetValueOrDefault(action, action),
                             language),
-                        body = body is { Count: > 0 } ? body : null,
+                        body = action == "reset_pw" || body is not { Count: > 0 } ? null : body,
                         result = translatedResult.Count == 0 ? null : translatedResult
                     };
                     await auditService.AppendAsync(
