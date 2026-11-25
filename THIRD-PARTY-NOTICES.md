@@ -2,9 +2,9 @@
 
 HoneyMOM, Copyright (C) 2026 蜂元科技（郑州）有限责任公司 (HoneyMeta Technology (Zhengzhou) Co., Ltd.), is licensed under AGPL-3.0-or-later (see [LICENSE](LICENSE)). It builds on the open-source projects listed
 below. Each component is licensed under its own terms; the license texts are included in the respective packages
-(Python wheels, npm packages) and, for the Docker image, in the installed packages. This list covers direct
+(Python wheels, NuGet packages, npm packages) and, for the Docker image, in the installed packages. This list covers direct
 dependencies and the components bundled into the web UI; transitive dependencies are listed in the package metadata
-(`pip show`, `web/package-lock.json`).
+(`pip show`, NuGet restore metadata, `web/package-lock.json`).
 
 ## Acknowledgement: ktg-mes
 
@@ -65,6 +65,14 @@ license texts.
 PyMuPDF is licensed under the AGPL-3.0, which is compatible with HoneyMOM's AGPL-3.0. A distribution of HoneyMOM
 under the HoneyMOM commercial license that includes PyMuPDF also needs a commercial PyMuPDF license from Artifex,
 or label PDF rendering must be switched off or replaced.
+
+## .NET runtime dependencies
+
+From `dotnet/src/*/*.csproj`.
+
+| Package | Used for | License |
+|---|---|---|
+| StbImageNext | cross-platform label image decoding | Unlicense OR MIT |
 
 ## Web UI dependencies
 

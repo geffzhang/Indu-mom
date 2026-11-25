@@ -54,6 +54,30 @@ public static class BarcodeEncoder
 
     public static string EncodeCode128(string data, bool gs1)
     {
+        var codewords = EncodeCode128Values(data, gs1).ToList();
+        var checksum = codewords[0];
+        for (var index = 1; index < codewords.Count; index++)
+        {
+            checksum += index * codewords[index];
+        }
+        codewords.Add(checksum % 103);
+        codewords.Add(106);
+
+        var result = new StringBuilder();
+        foreach (var codeword in codewords)
+        {
+            var bar = true;
+            foreach (var width in Code128Patterns[codeword])
+            {
+                result.Append(bar ? '1' : '0', width - '0');
+                bar = !bar;
+            }
+        }
+        return result.ToString();
+    }
+
+    internal static IReadOnlyList<int> EncodeCode128Values(string data, bool gs1)
+    {
         ArgumentNullException.ThrowIfNull(data);
         foreach (var character in data)
         {
@@ -155,26 +179,7 @@ public static class BarcodeEncoder
             codewords.Add(codeSet == 'A' && baseCharacter < 32 ? baseCharacter + 64 : baseCharacter - 32);
             position++;
         }
-
-        var checksum = codewords[0];
-        for (var index = 1; index < codewords.Count; index++)
-        {
-            checksum += index * codewords[index];
-        }
-        codewords.Add(checksum % 103);
-        codewords.Add(106);
-
-        var result = new StringBuilder();
-        foreach (var codeword in codewords)
-        {
-            var bar = true;
-            foreach (var width in Code128Patterns[codeword])
-            {
-                result.Append(bar ? '1' : '0', width - '0');
-                bar = !bar;
-            }
-        }
-        return result.ToString();
+        return codewords;
     }
 
     public static IReadOnlyList<IReadOnlyList<bool>> EncodeQr(string data, string ecc)
