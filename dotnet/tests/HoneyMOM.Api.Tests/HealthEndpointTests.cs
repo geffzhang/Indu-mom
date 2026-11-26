@@ -1,5 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
 namespace HoneyMOM.Api.Tests;
@@ -9,8 +8,8 @@ public sealed class HealthEndpointTests
     [Fact]
     public async Task GetHealth_ReturnsOk()
     {
-        using var factory = new WebApplicationFactory<Program>();
-        using var client = factory.CreateClient();
+        using var host = new ApiTestHost();
+        using var client = host.CreateClient();
 
         using var response = await client.GetAsync("/health");
 
