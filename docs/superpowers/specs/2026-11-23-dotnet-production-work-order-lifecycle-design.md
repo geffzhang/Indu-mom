@@ -1,6 +1,6 @@
 # .NET Production Work-Order Lifecycle Design
 
-**Status:** Proposed for written review
+**Status:** Approved for implementation planning (2026-11-27)
 **Reference commit:** `cf7abbbe215677022d22d3edef3554a86d18a924`
 **Parent design:** [2026-11-17-dotnet10-port-design.md](./2026-11-17-dotnet10-port-design.md)
 **Parent phase:** Core MOM domains
