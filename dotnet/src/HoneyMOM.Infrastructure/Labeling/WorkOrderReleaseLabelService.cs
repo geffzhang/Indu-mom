@@ -83,7 +83,17 @@ public sealed class WorkOrderReleaseLabelService : IWorkOrderReleaseLabelService
         """;
 
     private static readonly LabelTemplateRenderer Renderer = new();
-    private static readonly JsonElement EmptyElements = JsonSerializer.SerializeToElement(Array.Empty<object>());
+    private static readonly HashSet<string> UnsupportedWorkOrderUsages = new(StringComparer.Ordinal)
+    {
+        "part",
+        "carton",
+        "pallet",
+        "customer",
+        "gauge",
+        "location",
+        "lot",
+        "tool"
+    };
 
     private readonly HoneyMomDbContext _context;
     private readonly DynamicEntityStore _store;
@@ -139,6 +149,7 @@ public sealed class WorkOrderReleaseLabelService : IWorkOrderReleaseLabelService
                 continue;
             }
 
+            EnsureWorkOrderUsageSupported(template.Usage);
             var data = await BuildWorkOrderDataAsync(
                 connection,
                 transaction,
@@ -361,9 +372,11 @@ public sealed class WorkOrderReleaseLabelService : IWorkOrderReleaseLabelService
         var layout = ParseLayout(template.Layout);
         var elements = layout.ValueKind switch
         {
-            JsonValueKind.Object when layout.TryGetProperty("elements", out var value) => value.Clone(),
+            JsonValueKind.Object when layout.TryGetProperty("elements", out var value)
+                && value.ValueKind == JsonValueKind.Array => value.Clone(),
             JsonValueKind.Array => layout.Clone(),
-            _ => EmptyElements
+            _ => throw new InvalidDataException(
+                "Label template layout must be an array or contain an elements array.")
         };
         var width = template.WidthMm is > 0 ? template.WidthMm.Value : 100d;
         var height = template.HeightMm is > 0 ? template.HeightMm.Value : 60d;
@@ -395,6 +408,15 @@ public sealed class WorkOrderReleaseLabelService : IWorkOrderReleaseLabelService
                 return JsonSerializer.SerializeToElement(new Dictionary<string, object?>());
             default:
                 return JsonSerializer.SerializeToElement(value);
+        }
+    }
+
+    private static void EnsureWorkOrderUsageSupported(string? usage)
+    {
+        if (usage is not null && UnsupportedWorkOrderUsages.Contains(usage))
+        {
+            throw new NotSupportedException(
+                $"Label template usage '{usage}' is not supported for work-order release.");
         }
     }
 

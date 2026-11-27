@@ -900,7 +900,7 @@ public sealed class LabelTemplateRenderer
             || !template.TryGetProperty("elements", out var elements)
             || elements.ValueKind != JsonValueKind.Array)
         {
-            return [];
+            throw new InvalidDataException("Label template must contain an elements array.");
         }
         return elements.EnumerateArray().ToArray();
     }

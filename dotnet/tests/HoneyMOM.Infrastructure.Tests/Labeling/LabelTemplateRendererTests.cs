@@ -112,6 +112,22 @@ public sealed class LabelTemplateRendererTests
                 copies: 1));
     }
 
+    [Theory]
+    [InlineData("""{"width_mm":10,"height_mm":5}""")]
+    [InlineData("""{"width_mm":10,"height_mm":5,"elements":{}}""")]
+    [InlineData("""{"width_mm":10,"height_mm":5,"elements":null}""")]
+    public void RendererRejectsInvalidElementsCollection(string templateJson)
+    {
+        using var template = JsonDocument.Parse(templateJson);
+
+        Assert.Throws<InvalidDataException>(() =>
+            new LabelTemplateRenderer().RenderPrinterPayload(
+                template.RootElement,
+                new Dictionary<string, object?>(),
+                new PrinterSettings("zpl", 203),
+                copies: 1));
+    }
+
     [Fact]
     public void TransparentImagePixelsAreCompositedAgainstWhiteBeforePacking()
     {

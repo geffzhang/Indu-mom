@@ -69,10 +69,10 @@ public sealed class EntityCommandService
             !string.IsNullOrEmpty(field.Auto) &&
             EntityAutoCodeGenerator.IsMissing(field.Name, values));
 
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         using var autoCodeLock = hasAutoCode
             ? await EntityAutoCodeGenerator.AcquireLockAsync(cancellationToken)
             : null;
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
             if (hasAutoCode)

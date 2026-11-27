@@ -1,11 +1,14 @@
+using System.Data.Common;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using HoneyMOM.Application.Labeling;
+using HoneyMOM.Application.Security;
 using HoneyMOM.Infrastructure.Labeling;
 using HoneyMOM.Infrastructure.Persistence;
 using HoneyMOM.Infrastructure.Persistence.Metadata;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Xunit;
 
 namespace HoneyMOM.Infrastructure.Tests.Labeling;
@@ -87,6 +90,32 @@ public sealed class WorkOrderReleaseLabelServiceTests
         Assert.Equal("2026-11-25 04:10:57", entry.GetProperty("t").GetString());
         Assert.True(entry.GetProperty("ok").GetBoolean());
         Assert.Equal("浏览器打印（PDF）", entry.GetProperty("msg").GetString());
+    }
+
+    [Fact]
+    public async Task UnsupportedKnownTemplateUsageDoesNotQueueJob()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var templateId = await database.AddTemplateAsync("""{"elements":[]}""", usage: "part");
+        await database.AddRuleAsync(templateId);
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => database.QueueAsync());
+
+        Assert.Empty(await database.ReadJobsAsync());
+    }
+
+    [Fact]
+    public async Task UnknownTemplateUsageFallsBackToWorkOrderData()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var templateId = await database.AddTemplateAsync("""{"elements":[]}""", usage: "unknown");
+        await database.AddRuleAsync(templateId);
+
+        Assert.Equal(1, await database.QueueAsync());
+
+        var job = Assert.Single(await database.ReadJobsAsync());
+        using var data = JsonDocument.Parse(Assert.IsType<string>(job["data"]));
+        AssertWorkOrderData(data.RootElement, database);
     }
 
     [Fact]
@@ -178,6 +207,39 @@ public sealed class WorkOrderReleaseLabelServiceTests
         Assert.Empty(await database.ReadJobsAsync());
     }
 
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"elements\":{}}")]
+    [InlineData("null")]
+    public async Task ReleaseRuleRejectsInvalidLayoutShapeWithoutPersistingJob(string layout)
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var templateId = await database.AddTemplateAsync(layout);
+        var printerId = await database.AddPrinterAsync("zpl");
+        await database.AddRuleAsync(templateId, printerId: printerId);
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => database.QueueAsync());
+
+        Assert.Empty(await database.ReadJobsAsync());
+    }
+
+    [Fact]
+    public async Task ReleaseRuleRendersTopLevelElementArrayLayout()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var templateId = await database.AddTemplateAsync(
+            """[{"type":"text","x":0,"y":0,"h":4,"text":"{{code}}"}]""");
+        var printerId = await database.AddPrinterAsync("zpl");
+        await database.AddRuleAsync(templateId, printerId: printerId);
+
+        Assert.Equal(1, await database.QueueAsync());
+
+        var job = Assert.Single(await database.ReadJobsAsync());
+        Assert.Equal(
+            "^XA\n^CI28\n^PW80\n^LL40\n^LH0,0\n^FO0,0^A0N,32,32^FDWO-42^FS\n^PQ1\n^XZ\n",
+            job["payload"]);
+    }
+
     [Fact]
     public async Task QueueUsesCallerOwnedTransaction()
     {
@@ -195,6 +257,64 @@ public sealed class WorkOrderReleaseLabelServiceTests
         await transaction.RollbackAsync();
 
         Assert.Empty(await database.ReadJobsAsync());
+    }
+
+    [Fact]
+    public async Task ReleaseQueueDoesNotDeadlockWithConcurrentAutoCodedEntityCreate()
+    {
+        using var directory = new TemporaryDirectory();
+        var connectionString = new SqliteConnectionStringBuilder
+        {
+            DataSource = Path.Combine(directory.Path, "release.db"),
+            Pooling = false,
+            DefaultTimeout = 5
+        }.ToString();
+        await using var database = await TestDatabase.CreateAsync(connectionString);
+        var templateId = await database.AddTemplateAsync("""{"elements":[]}""");
+        await database.AddRuleAsync(templateId);
+        await using var releaseTransaction = await database.Context.Database.BeginTransactionAsync();
+        await database.Store.InsertAsync(
+            "setting",
+            new Dictionary<string, object?>
+            {
+                ["key"] = "release-lock",
+                ["value"] = "held"
+            },
+            CancellationToken.None);
+
+        var connectionOpened = new ConnectionOpenedSignal();
+        var catalog = new SchemaSnapshotCatalog();
+        var options = new DbContextOptionsBuilder<HoneyMomDbContext>()
+            .UseSqlite(connectionString)
+            .AddInterceptors(connectionOpened)
+            .Options;
+        await using var createContext = new HoneyMomDbContext(options);
+        var createStore = new DynamicEntityStore(createContext, catalog);
+        var createService = new EntityCommandService(
+            createContext,
+            catalog,
+            createStore,
+            new EntityQueryService(createContext, catalog),
+            new AuditService());
+        var createTask = Task.Run(() => createService.CreateAsync(
+                "work_order",
+                new Dictionary<string, JsonElement>
+                {
+                    ["product"] = JsonSerializer.SerializeToElement(database.WorkOrder.ProductId),
+                    ["qty"] = JsonSerializer.SerializeToElement(1)
+                },
+                new CallerPrincipal(1, "concurrent", "Concurrent", []),
+                CancellationToken.None));
+
+        await connectionOpened.WaitAsync(TimeSpan.FromSeconds(5));
+        var queuedJobs = await database.Service.QueueAsync(
+            database.WorkOrder,
+            CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(15));
+        await releaseTransaction.CommitAsync();
+        var createdWorkOrderId = await createTask.WaitAsync(TimeSpan.FromSeconds(15));
+
+        Assert.Equal(1, queuedJobs);
+        Assert.True(createdWorkOrderId > 0);
     }
 
     private static void AssertJobCode(IReadOnlyDictionary<string, object?> job)
@@ -236,11 +356,12 @@ public sealed class WorkOrderReleaseLabelServiceTests
         public HoneyMomDbContext Context { get; }
         public WorkOrderReleaseLabelService Service { get; }
         public WorkOrderReleaseLabelContext WorkOrder { get; }
+        public DynamicEntityStore Store => _store;
         public DateTimeOffset Now => new(2026, 11, 25, 4, 10, 57, TimeSpan.Zero);
 
-        public static async Task<TestDatabase> CreateAsync()
+        public static async Task<TestDatabase> CreateAsync(string? connectionString = null)
         {
-            var connection = new SqliteConnection("Data Source=:memory:");
+            var connection = new SqliteConnection(connectionString ?? "Data Source=:memory:");
             await connection.OpenAsync();
             var options = new DbContextOptionsBuilder<HoneyMomDbContext>()
                 .UseSqlite(connection)
@@ -295,7 +416,8 @@ public sealed class WorkOrderReleaseLabelServiceTests
             string layout,
             string status = "active",
             double widthMm = 10,
-            double heightMm = 5)
+            double heightMm = 5,
+            string usage = "wo")
         {
             var id = await _store.InsertAsync(
                 "label_template",
@@ -303,7 +425,7 @@ public sealed class WorkOrderReleaseLabelServiceTests
                 {
                     ["code"] = $"TPL-{Guid.NewGuid():N}",
                     ["name"] = "Work-order label",
-                    ["usage"] = "wo",
+                    ["usage"] = usage,
                     ["width_mm"] = widthMm,
                     ["height_mm"] = heightMm,
                     ["layout"] = layout,
@@ -395,6 +517,40 @@ public sealed class WorkOrderReleaseLabelServiceTests
         {
             await Context.DisposeAsync();
             await _connection.DisposeAsync();
+        }
+    }
+
+    private sealed class ConnectionOpenedSignal : DbConnectionInterceptor
+    {
+        private readonly TaskCompletionSource _connectionOpened =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task WaitAsync(TimeSpan timeout) => _connectionOpened.Task.WaitAsync(timeout);
+
+        public override Task ConnectionOpenedAsync(
+            DbConnection connection,
+            ConnectionEndEventData eventData,
+            CancellationToken cancellationToken = default)
+        {
+            _connectionOpened.TrySetResult();
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class TemporaryDirectory : IDisposable
+    {
+        public string Path { get; } = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(),
+            $"honeymom-release-lock-{Guid.NewGuid():N}");
+
+        public TemporaryDirectory() => Directory.CreateDirectory(Path);
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Path))
+            {
+                Directory.Delete(Path, recursive: true);
+            }
         }
     }
 
